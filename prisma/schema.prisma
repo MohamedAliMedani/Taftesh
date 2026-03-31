@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?   @unique
+  password      String?
+  role          String    @default("CLIENT") // CLIENT, EXPERT, ADMIN
+  specialty     String?   // ENGINEER, LAWYER
+  bio           String?   // For experts
+  verified      Boolean   @default(false) // For experts approval
+  createdAt     DateTime  @default(now())
+  
+  accounts      Account[]
+  sessions      Session[]
+  requests      InspectionRequest[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Property {
+  id        String   @id @default(cuid())
+  location  String
+  area      String?  // e.g. Tagamoa, Zayed
+  type      String?  // Apartment, Villa, Office
+  requests  InspectionRequest[]
+}
+
+model InspectionRequest {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  property      Property @relation(fields: [propertyId], references: [id])
+  propertyId    String
+  packageName   String   // LEGAL, TECHNICAL, FULL
+  packagePrice  Float    // Fixed price: 5000 or 8000
+  paymentStatus String   @default("PENDING") // PENDING, PAID, FAILED
+  status        String   @default("PENDING") // PENDING, SCHEDULED, IN_PROGRESS, COMPLETED
+  scheduledDate DateTime?
+  createdAt     DateTime @default(now())
+  reports       Report[]
+  transactions  Transaction[]
+}
+
+model Transaction {
+  id             String   @id @default(cuid())
+  request        InspectionRequest @relation(fields: [requestId], references: [id])
+  requestId      String
+  amount         Float
+  currency       String   @default("EGP")
+  paymentMethod  String   // CARD, WALLET
+  status         String   // SUCCESS, FAILED
+  gatewayTransId String?  // External Gateway Transaction ID
+  createdAt      DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  request     InspectionRequest @relation(fields: [requestId], references: [id])
+  requestId   String
+  type        String   // LEGAL, TECHNICAL
+  content     String?  // Detailed JSON or summary
+  pdfUrl      String?
+  createdAt   DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  message   String
+  createdAt DateTime @default(now())
+}
