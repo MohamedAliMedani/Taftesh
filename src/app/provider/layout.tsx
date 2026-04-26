@@ -5,8 +5,9 @@ import { useRouter, usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 import {
-  Shield, ClipboardList, User, LogOut, Menu, X, Bell, ChevronLeft, Home
+  ClipboardList, User, LogOut, Menu, X, Bell, ChevronLeft, Home
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 const navItems = [
   { label: "الطلبات المعينة", href: "/provider", icon: ClipboardList },
@@ -39,11 +40,9 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-black" />
-              </div>
+              <Logo size="sm" showText={false} />
               <div>
-                <div className="font-bold outfit text-lg">تفتيش</div>
+                <div className="font-bold outfit text-lg">أمانك</div>
                 <div className="text-[10px] text-emerald-500 font-bold">
                   {user.specialty === "ENGINEER" ? "لوحة المهندس" : "لوحة المحامي"}
                 </div>

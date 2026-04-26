@@ -6,8 +6,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "تفتيش وتوثيق | أمانك في شراء عقارك",
-  description: "المنصة الأولى في مصر لفحص العقارات فنياً وقانونياً قبل الشراء.",
+  title: "أمانك العقاري | عقارك.. أمانك",
+  description: "المنصة الأولى في مصر لفحص العقارات فنياً وقانونياً قبل الشراء. احمِ استثمارك مع خبراء معتمدين.",
 };
 
 import { Providers } from "@/components/Providers";

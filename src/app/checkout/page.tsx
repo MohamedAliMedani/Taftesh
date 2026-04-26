@@ -5,9 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Script from "next/script";
 import {
-  MapPin, CreditCard, Shield, AlertCircle, CalendarClock,
-  Clock, Banknote, CheckCircle2, Building, StickyNote
+  MapPin, CreditCard, AlertCircle, CalendarClock,
+  Clock, Banknote, CheckCircle2, Building, StickyNote, Shield
 } from "lucide-react";
+import { LogoMark } from "@/components/ui/Logo";
 import { motion } from "framer-motion";
 import { PACKAGES } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
@@ -176,9 +177,7 @@ function CheckoutContent() {
           className="glass-card p-8 rounded-3xl self-start sticky top-32"
         >
           <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-6">
-            <div className="w-12 h-12 gold-gradient rounded-xl flex items-center justify-center">
-              <Shield className="w-6 h-6 text-black" />
-            </div>
+            <LogoMark size={48} />
             <div>
               <h2 className="text-xl font-bold outfit">ملخص الطلب</h2>
               <p className="text-sm text-muted-foreground">راجع تفاصيل باقتك</p>

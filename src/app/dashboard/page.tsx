@@ -5,9 +5,11 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Shield, Clock, MapPin, Package, Calendar, ArrowRight,
-  AlertCircle, CheckCircle2, ArrowLeft, Bell, LogOut, Home, FileText
+  Clock, MapPin, Package, Calendar, ArrowRight,
+  AlertCircle, CheckCircle2, ArrowLeft, Bell, LogOut, Home, FileText, Shield
 } from "lucide-react";
+import { LogoMark } from "@/components/ui/Logo";
+import { SITE_CONFIG } from "@/lib/config";
 import { RequestStatusBadge, PaymentStatusBadge } from "@/components/ui/StatusBadge";
 import { PACKAGE_LABELS } from "@/lib/types";
 import type { RequestStatus, PaymentStatus, PackageName } from "@/lib/types";
@@ -45,9 +47,7 @@ export default function UserDashboard() {
       <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center shadow-2xl shadow-amber-500/20">
-              <Shield className="w-8 h-8 text-black" />
-            </div>
+            <LogoMark size={56} />
             <div>
               <h1 className="text-3xl font-bold outfit">أهلاً، {session.user?.name || "مستخدم"}</h1>
               <p className="text-muted-foreground">تتبع طلبات الفحص والتوثيق الخاصة بك</p>
@@ -89,7 +89,7 @@ export default function UserDashboard() {
             <div>
               <p className="font-bold mb-1">خصوصية التواصل</p>
               <p className="opacity-80">
-                سيقوم فريق تفتيش بالتنسيق بينك وبين الخبير لتحديد موعد الزيارة. خصوصيتك محمية بالكامل.
+                سيقوم فريق {SITE_CONFIG.nameShort} بالتنسيق بينك وبين الخبير لتحديد موعد الزيارة. خصوصيتك محمية بالكامل.
               </p>
             </div>
           </div>

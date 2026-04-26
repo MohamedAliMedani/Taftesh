@@ -4,9 +4,11 @@ import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
-  Shield, User, Phone, Lock, AlertCircle, Chrome, Facebook,
-  Briefcase, Mail, Upload, Image, FileText, Clock, CheckCircle2
+  User, Phone, Lock, AlertCircle, Chrome, Facebook,
+  Briefcase, Mail, Upload, FileText, Clock, CheckCircle2, Shield
 } from "lucide-react";
+import { LogoMark } from "@/components/ui/Logo";
+import { SITE_CONFIG } from "@/lib/config";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function RegisterPage() {
@@ -188,8 +190,8 @@ export default function RegisterPage() {
         className="w-full max-w-lg glass-card p-10 rounded-[40px] relative z-10 border-white/5 my-12"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-amber-500/20">
-            <Shield className="w-10 h-10 text-black" />
+          <div className="mx-auto mb-6 w-fit">
+            <LogoMark size={64} />
           </div>
           <h1 className="text-3xl font-bold outfit mb-2">إنشاء حساب جديد</h1>
           <p className="text-muted-foreground text-sm font-medium">ابدأ رحلتك لتأمين استثمارك العقاري</p>

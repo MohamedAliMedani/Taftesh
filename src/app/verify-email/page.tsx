@@ -3,7 +3,8 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Shield, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { LogoMark } from "@/components/ui/Logo";
 
 export default function VerifyEmailPage() {
   return (
@@ -54,8 +55,8 @@ function VerifyEmailContent() {
         animate={{ opacity: 1, scale: 1 }}
         className="glass-card p-12 rounded-[40px] text-center max-w-md relative z-10"
       >
-        <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <Shield className="w-10 h-10 text-black" />
+        <div className="mx-auto mb-6 w-fit">
+          <LogoMark size={64} />
         </div>
 
         {status === "loading" && (

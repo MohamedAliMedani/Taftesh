@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Shield, Lock, Phone, AlertCircle, Chrome, Facebook } from "lucide-react";
+import { Lock, Phone, AlertCircle, Chrome, Facebook } from "lucide-react";
+import { LogoMark } from "@/components/ui/Logo";
+import { SITE_CONFIG } from "@/lib/config";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
@@ -52,11 +54,11 @@ export default function LoginPage() {
         className="w-full max-w-md glass-card p-10 rounded-[40px] relative z-10 border-white/5"
       >
         <div className="text-center mb-10">
-          <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-amber-500/20">
-            <Shield className="w-10 h-10 text-black" />
+          <div className="mx-auto mb-6 w-fit">
+            <LogoMark size={64} />
           </div>
           <h1 className="text-3xl font-bold outfit mb-2">تسجيل الدخول</h1>
-          <p className="text-muted-foreground text-sm font-medium">مرحباً بك مجدداً في تفتيش وتوثيق</p>
+          <p className="text-muted-foreground text-sm font-medium">مرحباً بك مجدداً في {SITE_CONFIG.name}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

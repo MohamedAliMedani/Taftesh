@@ -4,8 +4,10 @@
 // ──────────────────────────────────────────────
 
 export const SITE_CONFIG = {
-  name: "تفتيش وتوثيق",
-  nameEn: "Taftesh",
+  name: "أمانك العقاري",
+  nameShort: "أمانك",
+  nameEn: "Amanak",
+  tagline: "عقارك.. أمانك",
   description: "المنصة الأولى في مصر لفحص العقارات فنياً وقانونياً قبل الشراء.",
   phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || "01000000000",
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "201000000000",

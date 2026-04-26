@@ -49,7 +49,7 @@ export async function GET(
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>${report.title} - تفتيش وتوثيق</title>
+  <title>${report.title} - أمانك العقاري</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -73,7 +73,7 @@ export async function GET(
 </head>
 <body>
   <div class="header">
-    <div class="logo">تفتيش <span>وتوثيق</span></div>
+    <div class="logo">أمانك <span>العقاري</span></div>
     <div>
       <span class="badge">تقرير ${typeLabel}</span>
     </div>
@@ -119,8 +119,8 @@ export async function GET(
   ` : ""}
 
   <div class="footer">
-    <div class="stamp">تفتيش</div>
-    <p style="margin-top:16px;">هذا التقرير صادر من منصة تفتيش وتوثيق — المنصة الأولى للأمان العقاري في مصر</p>
+    <div class="stamp">أمانك</div>
+    <p style="margin-top:16px;">هذا التقرير صادر من منصة أمانك العقاري — المنصة الأولى للأمان العقاري في مصر</p>
     <p>تاريخ الطباعة: ${new Date().toLocaleDateString("ar-EG", { dateStyle: "long" })}</p>
     <p style="margin-top:8px; font-size:10px; color:#cbd5e1;">هذا المستند إلكتروني ولا يحتاج إلى توقيع. يمكن التحقق من صحته عبر رقم التقرير.</p>
   </div>

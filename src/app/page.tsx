@@ -2,10 +2,11 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Shield, Search, FileCheck, CheckCircle2, Phone, ArrowLeft, Zap, Scale } from "lucide-react";
+import { Search, FileCheck, CheckCircle2, Phone, ArrowLeft, Zap, Scale } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { PACKAGES, SITE_CONFIG } from "@/lib/config";
+import { Logo, LogoMark } from "@/components/ui/Logo";
 
 export default function LandingPage() {
   const { data: session } = useSession();
@@ -22,12 +23,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Shield className="w-6 h-6 text-black" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight outfit">تفتيش وتوثيق</span>
-          </div>
+          <Logo size="md" />
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="#how-it-works" className="hover:text-amber-400 transition-colors">كيف يعمل؟</a>
@@ -76,7 +72,7 @@ export default function LandingPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 border border-white/5"
           >
             <Zap className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-semibold text-amber-200">المنصة الأولى للأمان العقاري في مصر</span>
+            <span className="text-xs font-semibold text-amber-200">{SITE_CONFIG.tagline} — المنصة الأولى في مصر</span>
           </motion.div>
 
           <motion.h1
@@ -305,7 +301,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-12 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 text-center text-muted-foreground text-sm">
-          © {new Date().getFullYear()} تفتيش وتوثيق - جميع الحقوق محفوظة
+          © {new Date().getFullYear()} {SITE_CONFIG.name} - جميع الحقوق محفوظة
         </div>
       </footer>
     </div>
