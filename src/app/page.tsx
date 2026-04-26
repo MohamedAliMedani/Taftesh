@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Shield, Search, FileCheck, CheckCircle2, Phone, ArrowLeft, Zap, Scale } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { PACKAGES, SITE_CONFIG } from "@/lib/config";
 
 export default function LandingPage() {
   const { data: session } = useSession();
@@ -34,15 +35,24 @@ export default function LandingPage() {
             <a href="#contact" className="hover:text-amber-400 transition-colors">اتصل بنا</a>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {session ? (
               <>
-                <a href="/dashboard" className="text-sm font-bold text-amber-400 hover:text-amber-300 transition-colors">
-                  طلباتي
+                <div className="hidden sm:flex items-center gap-2 ml-2">
+                  <div className="w-8 h-8 gold-gradient rounded-lg flex items-center justify-center text-black text-xs font-bold">
+                    {session.user?.name?.charAt(0) || "م"}
+                  </div>
+                  <span className="text-sm font-bold">{session.user?.name || "مستخدم"}</span>
+                </div>
+                <a
+                  href={(session.user as any)?.role === "ADMIN" ? "/admin" : (session.user as any)?.role === "EXPERT" ? "/provider" : "/dashboard"}
+                  className="glass px-5 py-2 rounded-full text-xs font-bold text-amber-400 hover:bg-white/10 transition-colors border border-amber-500/20"
+                >
+                  {(session.user as any)?.role === "ADMIN" ? "لوحة التحكم" : (session.user as any)?.role === "EXPERT" ? "طلباتي" : "طلباتي"}
                 </a>
                 <button
                   onClick={() => signOut()}
-                  className="glass px-5 py-2 rounded-full text-xs font-medium hover:bg-white/10 transition-colors border border-white/5"
+                  className="glass px-4 py-2 rounded-full text-xs font-medium hover:bg-white/10 transition-colors border border-white/5"
                 >
                   خروج
                 </button>
@@ -165,11 +175,11 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {/* Engineering */}
               <div className="glass-card p-8 rounded-3xl border-white/5 flex flex-col">
-                <h3 className="text-xl font-bold mb-2 outfit">الفحص الهندسي</h3>
-                <div className="text-4xl font-bold mb-2 text-amber-100 italic">5,000 ج.م</div>
+                <h3 className="text-xl font-bold mb-2 outfit">{PACKAGES.TECHNICAL.nameAr}</h3>
+                <div className="text-4xl font-bold mb-2 text-amber-100 italic">{PACKAGES.TECHNICAL.price.toLocaleString()} ج.م</div>
                 <div className="text-sm text-amber-500/60 mb-6">تدفع مرة واحدة</div>
                 <ul className="space-y-4 mb-10 flex-1">
-                  {["فحص السباكة والصرف", "معاينة التوصيلات الكهربائية", "كشف الرطوبة والشروخ", "تقرير هندسي PDF"].map((feat, i) => (
+                  {PACKAGES.TECHNICAL.features.map((feat, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
                       <CheckCircle2 className="w-5 h-5 text-amber-500" />
                       {feat}
@@ -184,15 +194,15 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              {/* Full Protection (1%) */}
+              {/* Full Protection */}
               <div className="glass-card p-1 rounded-3xl border-transparent bg-gradient-to-b from-amber-400 to-amber-700 shadow-2xl shadow-amber-500/20 transform scale-105 z-10 flex flex-col">
                 <div className="bg-[#0a0a0b] p-8 rounded-[22px] h-full flex flex-col">
                   <div className="px-3 py-1 bg-amber-500 text-black text-[10px] font-bold rounded-full w-fit mb-4 uppercase">الأمان المطلق</div>
-                  <h3 className="text-xl font-bold mb-2 outfit text-gradient">باقة "الأمان الشامل"</h3>
-                  <div className="text-5xl font-bold mb-2 text-white italic">8,000 ج.م</div>
+                  <h3 className="text-xl font-bold mb-2 outfit text-gradient">باقة "{PACKAGES.FULL.nameAr}"</h3>
+                  <div className="text-5xl font-bold mb-2 text-white italic">{PACKAGES.FULL.price.toLocaleString()} ج.م</div>
                   <div className="text-sm text-amber-400 mb-6">شاملة كل شيء</div>
                   <ul className="space-y-4 mb-10 flex-1">
-                    {["كل مميزات الفحص الهندسي", "مراجعة كافة الأوراق القانونية", "التأكد من موقف التراخيص", "صياغة عقد البيع النهائي", "جلسة استشارية 15 دقيقة"].map((feat, i) => (
+                    {PACKAGES.FULL.features.map((feat, i) => (
                       <li key={i} className="flex items-center gap-3 text-sm text-amber-50">
                         <CheckCircle2 className="w-5 h-5 text-amber-400 font-bold" />
                         {feat}
@@ -210,11 +220,11 @@ export default function LandingPage() {
 
               {/* Legal */}
               <div className="glass-card p-8 rounded-3xl border-white/5 flex flex-col">
-                <h3 className="text-xl font-bold mb-2 outfit">المراجعة القانونية</h3>
-                <div className="text-4xl font-bold mb-2 text-amber-100 italic">5,000 ج.م</div>
+                <h3 className="text-xl font-bold mb-2 outfit">{PACKAGES.LEGAL.nameAr}</h3>
+                <div className="text-4xl font-bold mb-2 text-amber-100 italic">{PACKAGES.LEGAL.price.toLocaleString()} ج.م</div>
                 <div className="text-sm text-amber-500/60 mb-6">تدفع مرة واحدة</div>
                 <ul className="space-y-4 mb-10 flex-1">
-                  {["فحص تسلسل الملكية", "التأكد من تراخيص البناء", "مراجعة موقف الضرائب", "تقرير قانوني شامل"].map((feat, i) => (
+                  {PACKAGES.LEGAL.features.map((feat, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
                       <CheckCircle2 className="w-5 h-5 text-amber-500" />
                       {feat}
@@ -241,7 +251,7 @@ export default function LandingPage() {
               <p className="text-muted-foreground mb-10 max-w-xl mx-auto">تواصل معنا عبر الواتساب أو الهاتف للحصول على استشارة سريعة حول عقارك القادم.</p>
               <div className="flex flex-col md:flex-row gap-4 justify-center">
                 <a
-                  href="https://wa.me/201000000000"
+                  href={`https://wa.me/${SITE_CONFIG.whatsapp}`}
                   target="_blank"
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors shadow-lg shadow-green-500/20"
                 >
@@ -275,7 +285,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">خدمة العملاء</div>
-                    <div className="font-bold">010xxxxxxxx</div>
+                    <div className="font-bold">{SITE_CONFIG.phone}</div>
                   </div>
                 </div>
               </div>

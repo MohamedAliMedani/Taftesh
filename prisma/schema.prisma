@@ -7,19 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ──────────────────────────────────────────────
+// NextAuth Required Models
+// ──────────────────────────────────────────────
+
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -34,6 +38,18 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model VerificationToken {
+  identifier String
+  token      String @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ──────────────────────────────────────────────
+// Core Models
+// ──────────────────────────────────────────────
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -43,68 +59,117 @@ model User {
   phone         String?   @unique
   password      String?
   role          String    @default("CLIENT") // CLIENT, EXPERT, ADMIN
-  specialty     String?   // ENGINEER, LAWYER
-  bio           String?   // For experts
-  verified      Boolean   @default(false) // For experts approval
+  specialty       String?   // ENGINEER, LAWYER (for EXPERT role)
+  bio             String?
+  experienceYears Int?      // years of experience (experts)
+  nationalIdImage String?   // uploaded national ID image path (experts)
+  verified        Boolean   @default(false) // admin approval for experts
+  active          Boolean   @default(true)
   createdAt     DateTime  @default(now())
-  
-  accounts      Account[]
-  sessions      Session[]
-  requests      InspectionRequest[]
-}
+  updatedAt     DateTime  @updatedAt
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+  accounts           Account[]
+  sessions           Session[]
+  requests           InspectionRequest[]     @relation("ClientRequests")
+  assignedRequests   InspectionRequest[]     @relation("ProviderRequests")
+  reports            Report[]
+  ratingsGiven       Rating[]                @relation("RaterRatings")
+  ratingsReceived    Rating[]                @relation("RatedRatings")
+  notifications      Notification[]
 }
 
 model Property {
-  id        String   @id @default(cuid())
+  id        String              @id @default(cuid())
   location  String
-  area      String?  // e.g. Tagamoa, Zayed
-  type      String?  // Apartment, Villa, Office
+  area      String?
+  type      String?             // Apartment, Villa, Office, Land
+  notes     String?
   requests  InspectionRequest[]
 }
 
 model InspectionRequest {
-  id            String   @id @default(cuid())
-  user          User     @relation(fields: [userId], references: [id])
-  userId        String
-  property      Property @relation(fields: [propertyId], references: [id])
-  propertyId    String
-  packageName   String   // LEGAL, TECHNICAL, FULL
-  packagePrice  Float    // Fixed price: 5000 or 8000
-  paymentStatus String   @default("PENDING") // PENDING, PAID, FAILED
-  status        String   @default("PENDING") // PENDING, SCHEDULED, IN_PROGRESS, COMPLETED
-  scheduledDate DateTime?
-  createdAt     DateTime @default(now())
-  reports       Report[]
-  transactions  Transaction[]
+  id              String    @id @default(cuid())
+  userId          String
+  propertyId      String
+  providerId      String?   // assigned provider
+  packageName     String    // LEGAL, TECHNICAL, FULL
+  packagePrice    Float
+  serviceType     String    @default("INSPECTION") // INSPECTION
+  paymentMethod   String    @default("ONLINE") // ONLINE, CASH
+  paymentStatus   String    @default("PENDING") // PENDING, PAID, FAILED, CASH
+  status          String    @default("PENDING") // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
+  scheduledDate   DateTime?
+  notes           String?   // user notes
+  adminNotes      String?   // admin internal notes
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user         User          @relation("ClientRequests", fields: [userId], references: [id])
+  property     Property      @relation(fields: [propertyId], references: [id])
+  provider     User?         @relation("ProviderRequests", fields: [providerId], references: [id])
+  reports      Report[]
+  transactions Transaction[]
+  ratings      Rating[]
 }
 
 model Transaction {
-  id             String   @id @default(cuid())
-  request        InspectionRequest @relation(fields: [requestId], references: [id])
+  id             String            @id @default(cuid())
   requestId      String
   amount         Float
-  currency       String   @default("EGP")
-  paymentMethod  String   // CARD, WALLET
-  status         String   // SUCCESS, FAILED
-  gatewayTransId String?  // External Gateway Transaction ID
-  createdAt      DateTime @default(now())
+  currency       String            @default("EGP")
+  paymentMethod  String            // CARD, WALLET, FAWRY, VODAFONE_CASH, CASH
+  status         String            @default("PENDING") // PENDING, SUCCESS, FAILED
+  gatewayTransId String?
+  createdAt      DateTime          @default(now())
+
+  request InspectionRequest @relation(fields: [requestId], references: [id])
 }
 
 model Report {
   id          String   @id @default(cuid())
-  request     InspectionRequest @relation(fields: [requestId], references: [id])
   requestId   String
+  authorId    String
   type        String   // LEGAL, TECHNICAL
-  content     String?  // Detailed JSON or summary
+  title       String
+  summary     String?  @db.Text
+  content     String?  @db.Text // detailed findings JSON or markdown
   pdfUrl      String?
+  status      String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  request InspectionRequest @relation(fields: [requestId], references: [id])
+  author  User              @relation(fields: [authorId], references: [id])
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  requestId  String
+  raterId    String   // the user giving the rating
+  ratedId    String   // the provider being rated
+  score      Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  request InspectionRequest @relation(fields: [requestId], references: [id])
+  rater   User              @relation("RaterRatings", fields: [raterId], references: [id])
+  rated   User              @relation("RatedRatings", fields: [ratedId], references: [id])
+
+  @@unique([requestId, raterId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, REQUEST_UPDATE, ASSIGNMENT, REPORT, PAYMENT
+  read      Boolean  @default(false)
+  link      String?  // optional link to navigate to
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model ContactMessage {
@@ -113,5 +178,6 @@ model ContactMessage {
   email     String
   phone     String
   message   String
+  read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }

@@ -1,26 +1,24 @@
 import { NextResponse } from "next/server";
-import { requireAuth, handleApiError } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { requireRole, handleApiError } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const user = await requireRole("EXPERT");
 
     const requests = await prisma.inspectionRequest.findMany({
       where: {
-        userId: user.id,
+        providerId: user.id,
       },
       include: {
         property: true,
-        provider: {
+        user: {
           select: {
             id: true,
             name: true,
-            specialty: true,
           },
         },
         reports: true,
-        ratings: true,
       },
       orderBy: {
         createdAt: "desc",

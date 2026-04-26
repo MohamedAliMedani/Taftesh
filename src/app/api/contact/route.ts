@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         const validatedData = contactSchema.safeParse(body);
 
         if (!validatedData.success) {
-            return NextResponse.json({ error: validatedData.error.errors[0].message }, { status: 400 });
+            return NextResponse.json({ error: validatedData.error.issues[0].message }, { status: 400 });
         }
 
         const { name, email, phone, message } = validatedData.data;
