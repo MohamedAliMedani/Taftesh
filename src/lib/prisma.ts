@@ -1,15 +1,22 @@
 import { PrismaClient } from "@prisma/client";
 
-const prismaClientSingleton = () => {
-    return new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
 };
 
-declare global {
-    var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
+function getPrismaClient() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient();
+  }
+  return globalForPrisma.prisma;
 }
 
-const prisma = globalThis.prisma ?? prismaClientSingleton();
+// Use a Proxy so Prisma only connects when a method is actually called,
+// not when the module is imported during Vercel build
+const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return Reflect.get(getPrismaClient(), prop);
+  },
+});
 
 export default prisma;
-
-if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
