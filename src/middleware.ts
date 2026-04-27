@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Referrer-Policy", "origin-when-cross-origin");
 
   // Skip auth check for public routes
-  const publicPaths = ["/", "/login", "/register", "/api/auth", "/api/contact", "/api/register"];
+  const publicPaths = ["/", "/login", "/register", "/api/auth", "/api/contact", "/api/register", "/api/upload"];
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
   if (isPublic || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
     return response;
