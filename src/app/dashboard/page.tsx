@@ -41,11 +41,11 @@ export default function UserDashboard() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white p-6 md:p-12">
+    <div className="min-h-screen bg-[#0a0a0b] text-white p-4 md:p-8 lg:p-12">
       <div className="hero-glow opacity-30" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mb-8 md:mb-12">
           <div className="flex items-center gap-4">
             <LogoMark size={56} />
             <div>

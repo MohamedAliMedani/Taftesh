@@ -118,9 +118,9 @@ export default function UserRequestDetailPage() {
   const currentStepIndex = steps.findIndex((s) => s.key === request.status);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white p-6 md:p-12">
+    <div className="min-h-screen bg-[#0a0a0b] text-white p-4 md:p-8 lg:p-12">
       <div className="hero-glow opacity-20" />
-      <div className="max-w-4xl mx-auto relative z-10 space-y-6">
+      <div className="max-w-4xl mx-auto relative z-10 space-y-4 md:space-y-6">
         {/* Back button */}
         <button
           onClick={() => router.push("/dashboard")}

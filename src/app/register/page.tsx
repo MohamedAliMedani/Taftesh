@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   User, Phone, Lock, AlertCircle, Chrome, Facebook,
-  Briefcase, Mail, Upload, FileText, Clock, CheckCircle2, Shield,
+  Mail, Upload, FileText, Clock, CheckCircle2, Shield,
   Camera, CreditCard, Banknote
 } from "lucide-react";
-import Dropdown from "@/components/ui/Dropdown";
 import { LogoMark } from "@/components/ui/Logo";
 import { SITE_CONFIG } from "@/lib/config";
 import { motion, AnimatePresence } from "framer-motion";
+
+function FieldError({ show, message }: { show: boolean; message: string }) {
+  if (!show) return null;
+  return <p className="text-[11px] text-red-400 mr-2 mt-1">{message}</p>;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,10 +26,9 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [userType, setUserType] = useState<"CLIENT" | "EXPERT">("CLIENT");
+  const [userType, setUserType] = useState<"CLIENT" | "ENGINEER" | "LAWYER">("CLIENT");
 
-  // Expert-only fields
-  const [specialty, setSpecialty] = useState<"ENGINEER" | "LAWYER">("ENGINEER");
+  const isExpert = userType === "ENGINEER" || userType === "LAWYER";
   const [bio, setBio] = useState("");
   const [experienceYears, setExperienceYears] = useState("");
   const [nationalIdImage, setNationalIdImage] = useState("");
@@ -37,6 +40,10 @@ export default function RegisterPage() {
   const [serviceRate, setServiceRate] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  // Touched state for inline validation
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touch = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
   // State
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +52,23 @@ export default function RegisterPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileInputRef = useRef<HTMLInputElement>(null);
   const syndicateInputRef = useRef<HTMLInputElement>(null);
+
+  // Validation helpers
+  const phoneRegex = /^01[0-9]{9}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const errors = {
+    name: !name.trim() ? "الاسم مطلوب" : name.trim().length < 2 ? "الاسم يجب أن يكون أكثر من حرفين" : "",
+    phone: !phone.trim() ? "رقم الهاتف مطلوب" : !phoneRegex.test(phone) ? "رقم الهاتف يجب أن يبدأ بـ 01 ويكون 11 رقم" : "",
+    email: isExpert && !email.trim() ? "البريد الإلكتروني مطلوب" : email && !emailRegex.test(email) ? "صيغة البريد الإلكتروني غير صحيحة" : "",
+    password: !password ? "كلمة المرور مطلوبة" : password.length < 6 ? "كلمة المرور يجب أن تكون 6 أحرف على الأقل" : "",
+    confirmPassword: !confirmPassword ? "تأكيد كلمة المرور مطلوب" : password !== confirmPassword ? "كلمتا المرور غير متطابقتين" : "",
+    serviceRate: isExpert && (!serviceRate || parseFloat(serviceRate) <= 0) ? "يرجى تحديد سعر الخدمة" : "",
+    syndicateCard: isExpert && !syndicateCardImage ? "يرجى رفع صورة كارت النقابة" : "",
+    nationalId: isExpert && !nationalIdImage ? "يرجى رفع صورة البطاقة الشخصية" : "",
+  };
+
+  const hasErrors = Object.values(errors).some((e) => e !== "");
 
   const handleUpload = async (
     file: File,
@@ -81,30 +105,13 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Touch all fields to show errors
+    setTouched({ name: true, phone: true, email: true, password: true, confirmPassword: true, serviceRate: true, syndicateCard: true, nationalId: true });
     setLoading(true);
     setError("");
 
-    // Client-side validations
-    if (password !== confirmPassword) {
-      setError("كلمتا المرور غير متطابقتين");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
-      setLoading(false);
-      return;
-    }
-
-    if (userType === "EXPERT" && !nationalIdImage) {
-      setError("يرجى رفع صورة البطاقة الشخصية");
-      setLoading(false);
-      return;
-    }
-
-    if (userType === "EXPERT" && !syndicateCardImage) {
-      setError("يرجى رفع صورة كارت النقابة");
+    if (hasErrors) {
+      setError("يرجى تصحيح الأخطاء المشار إليها");
       setLoading(false);
       return;
     }
@@ -116,11 +123,11 @@ export default function RegisterPage() {
         password,
         confirmPassword,
         email: email || undefined,
-        userType,
+        userType: isExpert ? "EXPERT" : "CLIENT",
       };
 
-      if (userType === "EXPERT") {
-        body.specialty = specialty;
+      if (isExpert) {
+        body.specialty = userType;
         body.bio = bio || undefined;
         body.experienceYears = experienceYears ? parseInt(experienceYears) : undefined;
         body.nationalIdImage = nationalIdImage;
@@ -153,28 +160,25 @@ export default function RegisterPage() {
   // Success screen
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-[#0a0a0b]">
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 bg-[#0a0a0b]">
         <div className="hero-glow opacity-50" />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="glass-card p-12 rounded-[40px] text-center max-w-md relative z-10"
+          className="glass-card p-8 md:p-12 rounded-3xl md:rounded-[40px] text-center w-full max-w-md relative z-10"
         >
           <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-12 h-12 text-green-500" />
           </div>
-          <h1 className="text-3xl font-bold outfit mb-4">تم التسجيل بنجاح!</h1>
-          <p className="text-muted-foreground mb-8 leading-relaxed">{successMessage}</p>
-          {userType === "EXPERT" ? (
+          <h1 className="text-2xl md:text-3xl font-bold outfit mb-4">تم التسجيل بنجاح!</h1>
+          <p className="text-muted-foreground mb-8 leading-relaxed text-sm md:text-base">{successMessage}</p>
+          {isExpert ? (
             <div className="space-y-3">
               <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-sm text-amber-200">
                 <Shield className="w-5 h-5 text-amber-500 inline ml-2" />
                 سيتم مراجعة بياناتك وصورة البطاقة من قبل الإدارة. ستتمكن من تسجيل الدخول بعد الاعتماد.
               </div>
-              <button
-                onClick={() => router.push("/")}
-                className="gold-gradient text-black px-8 py-3 rounded-2xl font-bold w-full"
-              >
+              <button onClick={() => router.push("/")} className="gold-gradient text-black px-8 py-3 rounded-2xl font-bold w-full">
                 العودة للرئيسية
               </button>
             </div>
@@ -186,10 +190,7 @@ export default function RegisterPage() {
                   تم إرسال رابط تفعيل لبريدك الإلكتروني. يرجى التحقق من صندوق الوارد.
                 </div>
               )}
-              <button
-                onClick={() => router.push("/login")}
-                className="gold-gradient text-black px-8 py-3 rounded-2xl font-bold w-full"
-              >
+              <button onClick={() => router.push("/login")} className="gold-gradient text-black px-8 py-3 rounded-2xl font-bold w-full">
                 تسجيل الدخول
               </button>
             </div>
@@ -200,132 +201,109 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[#0a0a0b]">
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 bg-[#0a0a0b]">
       <div className="hero-glow opacity-50" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg glass-card p-10 rounded-[40px] relative z-10 border-white/5 my-12"
+        className="w-full max-w-lg glass-card p-6 md:p-10 rounded-3xl md:rounded-[40px] relative z-10 border-white/5 my-4 md:my-12"
       >
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-6 w-fit">
-            <LogoMark size={64} />
+        <div className="text-center mb-6 md:mb-8">
+          <div className="mx-auto mb-4 md:mb-6 w-fit">
+            <LogoMark size={56} />
           </div>
-          <h1 className="text-3xl font-bold outfit mb-2">إنشاء حساب جديد</h1>
-          <p className="text-muted-foreground text-sm font-medium">ابدأ رحلتك لتأمين استثمارك العقاري</p>
+          <h1 className="text-2xl md:text-3xl font-bold outfit mb-2">إنشاء حساب جديد</h1>
+          <p className="text-muted-foreground text-xs md:text-sm font-medium">ابدأ رحلتك لتأمين استثمارك العقاري</p>
         </div>
 
         {/* User type toggle */}
-        <div className="flex bg-white/5 p-1 rounded-2xl mb-8">
+        <div className="flex bg-white/5 p-1 rounded-2xl mb-6 md:mb-8 gap-1">
           <button
             type="button"
             onClick={() => setUserType("CLIENT")}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${userType === "CLIENT" ? "bg-amber-500 text-black shadow-lg" : "text-muted-foreground hover:text-white"}`}
+            className={`flex-1 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all ${userType === "CLIENT" ? "bg-amber-500 text-black shadow-lg" : "text-muted-foreground hover:text-white"}`}
           >
-            تسجيل كعميل
+            عميل
           </button>
           <button
             type="button"
-            onClick={() => setUserType("EXPERT")}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${userType === "EXPERT" ? "bg-amber-500 text-black shadow-lg" : "text-muted-foreground hover:text-white"}`}
+            onClick={() => setUserType("ENGINEER")}
+            className={`flex-1 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all ${userType === "ENGINEER" ? "bg-blue-500 text-white shadow-lg" : "text-muted-foreground hover:text-white"}`}
           >
-            تسجيل كخبير
+            مهندس
+          </button>
+          <button
+            type="button"
+            onClick={() => setUserType("LAWYER")}
+            className={`flex-1 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all ${userType === "LAWYER" ? "bg-purple-500 text-white shadow-lg" : "text-muted-foreground hover:text-white"}`}
+          >
+            محامي
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className="text-xs font-bold text-amber-500/80 mr-2">الاسم بالكامل *</label>
-            <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-              <User className="w-5 h-5 text-muted-foreground ml-3" />
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="محمد علي" className="bg-transparent border-none outline-none text-sm w-full font-medium" required />
+            <div className={`glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${touched.name && errors.name ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
+              <User className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => touch("name")} placeholder="محمد علي" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
             </div>
+            <FieldError show={!!touched.name && !!errors.name} message={errors.name} />
           </div>
 
           {/* Phone */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className="text-xs font-bold text-amber-500/80 mr-2">رقم الهاتف *</label>
-            <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-              <Phone className="w-5 h-5 text-muted-foreground ml-3" />
-              <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" className="bg-transparent border-none outline-none text-sm w-full font-medium" required />
+            <div className={`glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${touched.phone && errors.phone ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
+              <Phone className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={() => touch("phone")} placeholder="01xxxxxxxxx" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
             </div>
+            <FieldError show={!!touched.phone && !!errors.phone} message={errors.phone} />
           </div>
 
           {/* Email */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className="text-xs font-bold text-amber-500/80 mr-2">
-              البريد الإلكتروني {userType === "CLIENT" ? "(لتفعيل الحساب)" : "*"}
+              البريد الإلكتروني {userType === "CLIENT" ? "(اختياري)" : "*"}
             </label>
-            <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-              <Mail className="w-5 h-5 text-muted-foreground ml-3" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@mail.com"
-                className="bg-transparent border-none outline-none text-sm w-full font-medium"
-                required={userType === "EXPERT"}
-              />
+            <div className={`glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${touched.email && errors.email ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
+              <Mail className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => touch("email")} placeholder="example@mail.com" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
             </div>
+            <FieldError show={!!touched.email && !!errors.email} message={errors.email} />
           </div>
 
           {/* Expert-only fields */}
           <AnimatePresence>
-            {userType === "EXPERT" && (
+            {isExpert && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-4 overflow-hidden"
               >
-                {/* Specialty */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-amber-500/80 mr-2">التخصص *</label>
-                  <Dropdown
-                    value={specialty}
-                    onChange={(v) => setSpecialty(v as "ENGINEER" | "LAWYER")}
-                    options={[
-                      { value: "ENGINEER", label: "مهندس استشاري" },
-                      { value: "LAWYER", label: "محامي عقاري" },
-                    ]}
-                    icon={<Briefcase className="w-5 h-5 text-muted-foreground" />}
-                  />
-                </div>
-
                 {/* Profile Image */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">صورة شخصية</label>
                   <div
                     onClick={() => profileInputRef.current?.click()}
-                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${
-                      profileImage ? "border-green-500/30" : "border-white/10"
-                    } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${profileImage ? "border-green-500/30" : "border-white/10"} ${uploading ? "opacity-50 pointer-events-none" : ""}`}
                   >
-                    <input
-                      ref={profileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpload(file, "profile-images", setProfileImage, setProfileImagePreview);
-                      }}
-                      className="hidden"
-                    />
+                    <input ref={profileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUpload(file, "profile-images", setProfileImage, setProfileImagePreview); }} className="hidden" />
                     {profileImagePreview ? (
                       <div className="p-4 flex flex-col items-center">
                         <div className="relative">
-                          <img src={profileImagePreview} alt="صورة شخصية" className="w-24 h-24 object-cover rounded-full border-2 border-amber-500/30" />
+                          <img src={profileImagePreview} alt="صورة شخصية" className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-full border-2 border-amber-500/30" />
                           <div className="absolute -bottom-1 -left-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            تم
+                            <CheckCircle2 className="w-3 h-3" /> تم
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">اضغط لتغيير الصورة</p>
                       </div>
                     ) : (
-                      <div className="p-6 text-center">
+                      <div className="p-4 md:p-6 text-center">
                         <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
                           <Camera className="w-6 h-6 text-amber-400" />
                         </div>
@@ -337,114 +315,93 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Experience Years */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">سنوات الخبرة</label>
-                  <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-                    <Clock className="w-5 h-5 text-muted-foreground ml-3" />
+                  <div className="glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
+                    <Clock className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
                     <input type="number" min="0" max="60" value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} placeholder="مثال: 10" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
                   </div>
                 </div>
 
                 {/* Service Rate */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-amber-500/80 mr-2">سعر الخدمة (ج.م)</label>
-                  <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-                    <Banknote className="w-5 h-5 text-muted-foreground ml-3" />
-                    <input type="number" min="0" value={serviceRate} onChange={(e) => setServiceRate(e.target.value)} placeholder="مثال: 500" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-amber-500/80 mr-2">سعر الخدمة (ج.م) * <span className="text-muted-foreground font-normal">يضاف 25% رسوم المنصة</span></label>
+                  <div className={`glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${touched.serviceRate && errors.serviceRate ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
+                    <Banknote className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
+                    <input type="number" min="0" value={serviceRate} onChange={(e) => setServiceRate(e.target.value)} onBlur={() => touch("serviceRate")} placeholder="مثال: 500" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
                   </div>
+                  <FieldError show={!!touched.serviceRate && !!errors.serviceRate} message={errors.serviceRate} />
                 </div>
 
                 {/* Bio */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">نبذة عنك ومؤهلاتك</label>
-                  <div className="glass flex items-start px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-                    <FileText className="w-5 h-5 text-muted-foreground ml-3 mt-0.5" />
+                  <div className="glass flex items-start px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
+                    <FileText className="w-5 h-5 text-muted-foreground ml-3 mt-0.5 flex-shrink-0" />
                     <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="اكتب نبذة مختصرة عن خبرتك ومؤهلاتك..." className="bg-transparent border-none outline-none text-sm w-full font-medium resize-none h-20" />
                   </div>
                 </div>
 
                 {/* Syndicate Card Upload */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">صورة كارت النقابة *</label>
                   <div
-                    onClick={() => syndicateInputRef.current?.click()}
-                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${
-                      syndicateCardImage ? "border-green-500/30" : "border-white/10"
-                    } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+                    onClick={() => { syndicateInputRef.current?.click(); touch("syndicateCard"); }}
+                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${syndicateCardImage ? "border-green-500/30" : touched.syndicateCard && errors.syndicateCard ? "border-red-500/30" : "border-white/10"} ${uploading ? "opacity-50 pointer-events-none" : ""}`}
                   >
-                    <input
-                      ref={syndicateInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpload(file, "syndicate-cards", setSyndicateCardImage, setSyndicateCardPreview);
-                      }}
-                      className="hidden"
-                    />
+                    <input ref={syndicateInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUpload(file, "syndicate-cards", setSyndicateCardImage, setSyndicateCardPreview); }} className="hidden" />
                     {syndicateCardPreview ? (
                       <div className="p-4">
                         <div className="relative">
-                          <img src={syndicateCardPreview} alt="كارت النقابة" className="w-full h-40 object-cover rounded-xl" />
+                          <img src={syndicateCardPreview} alt="كارت النقابة" className="w-full h-32 md:h-40 object-cover rounded-xl" />
                           <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            تم الرفع
+                            <CheckCircle2 className="w-3 h-3" /> تم الرفع
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground text-center mt-2">اضغط لتغيير الصورة</p>
                       </div>
                     ) : (
-                      <div className="p-8 text-center">
-                        <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                          <CreditCard className="w-7 h-7 text-amber-400" />
+                      <div className="p-6 md:p-8 text-center">
+                        <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <CreditCard className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
                         </div>
                         <p className="text-sm font-bold mb-1">اضغط لرفع صورة كارت النقابة</p>
                         <p className="text-xs text-muted-foreground">JPG, PNG أو WEBP — الحد الأقصى 5 ميجا</p>
                       </div>
                     )}
                   </div>
+                  <FieldError show={!!touched.syndicateCard && !!errors.syndicateCard} message={errors.syndicateCard} />
                 </div>
 
                 {/* National ID Upload */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">صورة البطاقة الشخصية (الرقم القومي) *</label>
                   <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${
-                      nationalIdImage ? "border-green-500/30" : "border-white/10"
-                    } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+                    onClick={() => { fileInputRef.current?.click(); touch("nationalId"); }}
+                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${nationalIdImage ? "border-green-500/30" : touched.nationalId && errors.nationalId ? "border-red-500/30" : "border-white/10"} ${uploading ? "opacity-50 pointer-events-none" : ""}`}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpload(file, "national-ids", setNationalIdImage, setNationalIdPreview);
-                      }}
-                      className="hidden"
-                    />
+                    <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUpload(file, "national-ids", setNationalIdImage, setNationalIdPreview); }} className="hidden" />
                     {nationalIdPreview ? (
                       <div className="p-4">
                         <div className="relative">
-                          <img src={nationalIdPreview} alt="صورة البطاقة" className="w-full h-40 object-cover rounded-xl" />
+                          <img src={nationalIdPreview} alt="صورة البطاقة" className="w-full h-32 md:h-40 object-cover rounded-xl" />
                           <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            تم الرفع
+                            <CheckCircle2 className="w-3 h-3" /> تم الرفع
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground text-center mt-2">اضغط لتغيير الصورة</p>
                       </div>
                     ) : (
-                      <div className="p-8 text-center">
-                        <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                          <Upload className="w-7 h-7 text-amber-400" />
+                      <div className="p-6 md:p-8 text-center">
+                        <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <Upload className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
                         </div>
                         <p className="text-sm font-bold mb-1">اضغط لرفع صورة البطاقة</p>
                         <p className="text-xs text-muted-foreground">JPG, PNG أو WEBP — الحد الأقصى 5 ميجا</p>
                       </div>
                     )}
                   </div>
+                  <FieldError show={!!touched.nationalId && !!errors.nationalId} message={errors.nationalId} />
                   <p className="text-[10px] text-amber-500/40 mr-2">
                     هذه الصورة مطلوبة لتأكيد هويتك وسيتم مراجعتها من قبل الإدارة. لن يتم مشاركتها مع أي طرف.
                   </p>
@@ -454,28 +411,23 @@ export default function RegisterPage() {
           </AnimatePresence>
 
           {/* Password */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className="text-xs font-bold text-amber-500/80 mr-2">كلمة المرور *</label>
-            <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-              <Lock className="w-5 h-5 text-muted-foreground ml-3" />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="6 أحرف على الأقل" className="bg-transparent border-none outline-none text-sm w-full font-medium" required minLength={6} />
+            <div className={`glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${touched.password && errors.password ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
+              <Lock className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => touch("password")} placeholder="6 أحرف على الأقل" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
             </div>
+            <FieldError show={!!touched.password && !!errors.password} message={errors.password} />
           </div>
 
           {/* Confirm Password */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className="text-xs font-bold text-amber-500/80 mr-2">تأكيد كلمة المرور *</label>
-            <div className={`glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${
-              confirmPassword && password !== confirmPassword
-                ? "ring-red-500/50 border-red-500/20"
-                : "ring-amber-500/50 border-white/5"
-            }`}>
-              <Lock className="w-5 h-5 text-muted-foreground ml-3" />
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="أعد كتابة كلمة المرور" className="bg-transparent border-none outline-none text-sm w-full font-medium" required />
+            <div className={`glass flex items-center px-4 py-3 md:py-3.5 rounded-2xl focus-within:ring-2 transition-all border ${touched.confirmPassword && errors.confirmPassword ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
+              <Lock className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onBlur={() => touch("confirmPassword")} placeholder="أعد كتابة كلمة المرور" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
             </div>
-            {confirmPassword && password !== confirmPassword && (
-              <p className="text-[11px] text-red-400 mr-2">كلمتا المرور غير متطابقتين</p>
-            )}
+            <FieldError show={!!touched.confirmPassword && !!errors.confirmPassword} message={errors.confirmPassword} />
           </div>
 
           {/* Error */}
@@ -483,7 +435,7 @@ export default function RegisterPage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl text-xs flex items-center gap-2"
+              className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 md:p-4 rounded-2xl text-xs flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
@@ -493,10 +445,10 @@ export default function RegisterPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || uploading || (confirmPassword.length > 0 && password !== confirmPassword)}
-            className="w-full gold-gradient text-black py-4 rounded-2xl font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-amber-500/10 disabled:opacity-70 mt-2"
+            disabled={loading || uploading}
+            className="w-full gold-gradient text-black py-3.5 md:py-4 rounded-2xl font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-amber-500/10 disabled:opacity-70 mt-2"
           >
-            {loading ? "جاري إنشاء الحساب..." : userType === "EXPERT" ? "تقديم طلب التسجيل" : "إنشاء حساب"}
+            {loading ? "جاري إنشاء الحساب..." : isExpert ? "تقديم طلب التسجيل" : "إنشاء حساب"}
           </button>
 
           {/* Social login - clients only */}
@@ -507,21 +459,21 @@ export default function RegisterPage() {
                 <span className="flex-shrink-0 mx-4 text-xs text-muted-foreground">أو التسجيل بواسطة</span>
                 <div className="flex-grow border-t border-white/10"></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <button type="button" onClick={() => signIn("google", { callbackUrl: "/dashboard" })} className="flex items-center justify-center gap-2 glass px-4 py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10">
+              <div className="grid grid-cols-2 gap-2 md:gap-4">
+                <button type="button" onClick={() => signIn("google", { callbackUrl: "/dashboard" })} className="flex items-center justify-center gap-2 glass px-3 md:px-4 py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10">
                   <Chrome className="w-5 h-5" />
-                  <span className="text-sm font-bold">Google</span>
+                  <span className="text-xs md:text-sm font-bold">Google</span>
                 </button>
-                <button type="button" onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })} className="flex items-center justify-center gap-2 glass px-4 py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10">
+                <button type="button" onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })} className="flex items-center justify-center gap-2 glass px-3 md:px-4 py-3 rounded-xl hover:bg-white/10 transition-colors border border-white/10">
                   <Facebook className="w-5 h-5" />
-                  <span className="text-sm font-bold">Facebook</span>
+                  <span className="text-xs md:text-sm font-bold">Facebook</span>
                 </button>
               </div>
             </>
           )}
         </form>
 
-        <div className="mt-8 text-center text-sm">
+        <div className="mt-6 md:mt-8 text-center text-sm">
           <span className="text-muted-foreground">لديك حساب بالفعل؟ </span>
           <a href="/login" className="text-amber-400 font-bold hover:underline">تسجيل الدخول</a>
           <div className="mt-4">

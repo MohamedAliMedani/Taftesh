@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowRight, Star, Clock, Briefcase, User, CheckCircle2,
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
-import { PACKAGES } from "@/lib/config";
+import { PACKAGES, calculateTotalPrice } from "@/lib/config";
 import { SPECIALTY_LABELS } from "@/lib/types";
 
 interface Expert {
@@ -92,7 +92,8 @@ function ExpertCard({
         {expert.serviceRate != null && (
           <div className="flex items-center gap-1">
             <Briefcase className="w-3.5 h-3.5" />
-            {expert.serviceRate.toLocaleString()} ج.م
+            <span className="text-amber-400 font-bold">{calculateTotalPrice(expert.serviceRate).toLocaleString()} ج.م</span>
+            <span className="text-[10px] text-muted-foreground">(شامل رسوم المنصة)</span>
           </div>
         )}
       </div>
@@ -129,8 +130,8 @@ function ExpertsContent() {
   const isFull = packageName === "FULL";
   const [selectedEngineerId, setSelectedEngineerId] = useState<string | null>(null);
   const [selectedLawyerId, setSelectedLawyerId] = useState<string | null>(null);
-  // For single-select packages
-  const [selectedExpertId, setSelectedExpertId] = useState<string | null>(null);
+  // For single-select packages (unused state setter kept for consistency)
+  const [selectedExpertId] = useState<string | null>(null);
 
   const pkg = PACKAGES[packageName as keyof typeof PACKAGES];
 
@@ -162,14 +163,12 @@ function ExpertsContent() {
     router.push(`/checkout?package=${packageName}&expertId=${expertId}`);
   };
 
-  const canProceedFull = selectedEngineerId || selectedLawyerId;
-
   return (
     <div className="min-h-screen bg-[#0a0a0b] font-sans">
       <div className="hero-glow opacity-30" />
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-6 pt-10 pb-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-8 md:pt-10 pb-6 md:pb-8 relative z-10">
         <button
           onClick={() => router.push("/#pricing")}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-amber-400 transition-colors mb-8"
@@ -187,8 +186,8 @@ function ExpertsContent() {
           )}
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold outfit mb-2">
-          {isFull ? "اختر المهندس والمحامي" : "اختر الخبير المناسب"}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold outfit mb-2">
+          {isFull ? "اختر المهندس ��المحامي" : "اختر الخبير المناسب"}
         </h1>
         <p className="text-muted-foreground">
           {isFull
@@ -198,7 +197,7 @@ function ExpertsContent() {
       </div>
 
       {/* Experts Grid */}
-      <div className="max-w-7xl mx-auto px-6 pb-20 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-28 md:pb-20 relative z-10">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
@@ -281,8 +280,8 @@ function ExpertsContent() {
             </div>
 
             {/* Proceed button (sticky bottom) */}
-            <div className="sticky bottom-6 z-20">
-              <div className="max-w-lg mx-auto glass-card p-4 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-4">
+            <div className="fixed bottom-0 left-0 right-0 md:sticky md:bottom-6 z-20 p-3 md:p-0">
+              <div className="max-w-lg mx-auto glass-card p-3 md:p-4 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-3 md:gap-4">
                 <div className="flex-1 text-sm">
                   <div className="flex items-center gap-3">
                     {selectedEngineerId && (
@@ -334,7 +333,7 @@ function ExpertsContent() {
             </div>
 
             {/* Skip selection option */}
-            {experts.length > 0 && (
+            {/* {experts.length > 0 && (
               <div className="text-center mt-10">
                 <button
                   onClick={() => router.push(`/checkout?package=${packageName}`)}
@@ -343,7 +342,7 @@ function ExpertsContent() {
                   متابعة بدون اختيار خبير — سيتم تعيين خبير من الإدارة
                 </button>
               </div>
-            )}
+            )} */}
           </>
         )}
       </div>

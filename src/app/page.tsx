@@ -79,7 +79,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold mb-8 leading-tight outfit"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-6 md:mb-8 leading-tight outfit"
           >
             استثمر في عقارك بـ <span className="text-gradient underline decoration-amber-500/30">أمان مطلق</span>
           </motion.h1>
@@ -88,7 +88,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-12 leading-relaxed"
+            className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mb-8 md:mb-12 leading-relaxed px-2"
           >
             اختر باقتك الآن لتأمين عقارك. نحن نحميك من العيوب الفنية والمخاطر القانونية بأسعار ثابتة وشفافة.
           </motion.p>
@@ -97,18 +97,18 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="w-full max-w-xl flex justify-center gap-4"
+            className="w-full max-w-xl flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 px-4"
           >
             <a
               href="#pricing"
-              className="gold-gradient text-black px-10 py-5 rounded-[24px] font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-amber-500/20"
+              className="gold-gradient text-black px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-[24px] font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-amber-500/20"
             >
               تصفح الباقات
               <ArrowLeft className="w-5 h-5" />
             </a>
             <a
               href="/register"
-              className="glass text-white px-10 py-5 rounded-[24px] font-bold border border-white/10 hover:bg-white/5 transition-colors"
+              className="glass text-white px-8 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-[24px] font-bold border border-white/10 hover:bg-white/5 transition-colors"
             >
               تسجيل كخبير
             </a>
@@ -165,15 +165,15 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold outfit mb-4 text-gradient">باقات الأمان العقاري</h2>
-              <p className="text-muted-foreground">التسعير ثابت وشفاف لخدمات احترافية بمستويات غير مسبوقة</p>
+              <p className="text-muted-foreground">اختر باقتك وخبيرك — السعر يحدده الخبير حسب خبرته</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {/* Engineering */}
               <div className="glass-card p-8 rounded-3xl border-white/5 flex flex-col">
                 <h3 className="text-xl font-bold mb-2 outfit">{PACKAGES.TECHNICAL.nameAr}</h3>
-                <div className="text-4xl font-bold mb-2 text-amber-100 italic">{PACKAGES.TECHNICAL.price.toLocaleString()} ج.م</div>
-                <div className="text-sm text-amber-500/60 mb-6">تدفع مرة واحدة</div>
+                <div className="text-3xl font-bold mb-2 text-amber-100 italic">حسب الخبير</div>
+                <div className="text-sm text-amber-500/60 mb-6">السعر يحدده المهندس </div>
                 <ul className="space-y-4 mb-10 flex-1">
                   {PACKAGES.TECHNICAL.features.map((feat, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -195,8 +195,8 @@ export default function LandingPage() {
                 <div className="bg-[#0a0a0b] p-8 rounded-[22px] h-full flex flex-col">
                   <div className="px-3 py-1 bg-amber-500 text-black text-[10px] font-bold rounded-full w-fit mb-4 uppercase">الأمان المطلق</div>
                   <h3 className="text-xl font-bold mb-2 outfit text-gradient">باقة "{PACKAGES.FULL.nameAr}"</h3>
-                  <div className="text-5xl font-bold mb-2 text-white italic">{PACKAGES.FULL.price.toLocaleString()} ج.م</div>
-                  <div className="text-sm text-amber-400 mb-6">شاملة كل شيء</div>
+                  <div className="text-4xl font-bold mb-2 text-white italic">حسب الخبراء</div>
+                  <div className="text-sm text-amber-400 mb-6">سعر المهندس + المحامي </div>
                   <ul className="space-y-4 mb-10 flex-1">
                     {PACKAGES.FULL.features.map((feat, i) => (
                       <li key={i} className="flex items-center gap-3 text-sm text-amber-50">
@@ -217,8 +217,8 @@ export default function LandingPage() {
               {/* Legal */}
               <div className="glass-card p-8 rounded-3xl border-white/5 flex flex-col">
                 <h3 className="text-xl font-bold mb-2 outfit">{PACKAGES.LEGAL.nameAr}</h3>
-                <div className="text-4xl font-bold mb-2 text-amber-100 italic">{PACKAGES.LEGAL.price.toLocaleString()} ج.م</div>
-                <div className="text-sm text-amber-500/60 mb-6">تدفع مرة واحدة</div>
+                <div className="text-3xl font-bold mb-2 text-amber-100 italic">حسب الخبير</div>
+                <div className="text-sm text-amber-500/60 mb-6">السعر يحدده المحامي </div>
                 <ul className="space-y-4 mb-10 flex-1">
                   {PACKAGES.LEGAL.features.map((feat, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -267,7 +267,7 @@ export default function LandingPage() {
 
         {/* Contact Us Form Section */}
         <section id="contact" className="py-24 bg-white/5 relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
             <div className="space-y-8">
               <h2 className="text-4xl font-bold outfit text-gradient">تواصل معنا</h2>
               <p className="text-muted-foreground text-lg leading-relaxed">

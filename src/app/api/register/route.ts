@@ -55,6 +55,9 @@ export async function POST(req: Request) {
       if (!syndicateCardImage) {
         return NextResponse.json({ error: "يرجى رفع صورة كارت النقابة" }, { status: 400 });
       }
+      if (!serviceRate || serviceRate <= 0) {
+        return NextResponse.json({ error: "يرجى تحديد سعر الخدمة" }, { status: 400 });
+      }
     }
 
     // Check existing phone

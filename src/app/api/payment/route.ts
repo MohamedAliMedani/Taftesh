@@ -3,7 +3,7 @@ import { requireAuth, handleApiError } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import crypto from "crypto";
-import { PACKAGES, SITE_CONFIG } from "@/lib/config";
+import { PACKAGES, SITE_CONFIG, calculateTotalPrice } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
 
 const paymentSchema = z.object({
@@ -53,17 +53,19 @@ export async function POST(req: Request) {
 
     const selectedPkg = PACKAGES[packageName as PackageName];
 
-    // Validate expert(s) if selected
+    // Validate expert(s) if selected and collect rates
     let validExpertId: string | undefined;
+    let totalBaseRate = 0;
     const adminNotesParts: string[] = [];
 
     if (expertId) {
       const expert = await prisma.user.findFirst({
         where: { id: expertId, role: "EXPERT", verified: true, active: true },
-        select: { id: true, name: true },
+        select: { id: true, name: true, serviceRate: true },
       });
       if (expert) {
         validExpertId = expert.id;
+        totalBaseRate += expert.serviceRate ?? 0;
         adminNotesParts.push(`العميل اختار الخبير: ${expert.name}`);
       }
     }
@@ -72,10 +74,11 @@ export async function POST(req: Request) {
     if (engineerId) {
       const eng = await prisma.user.findFirst({
         where: { id: engineerId, role: "EXPERT", specialty: "ENGINEER", verified: true, active: true },
-        select: { id: true, name: true },
+        select: { id: true, name: true, serviceRate: true },
       });
       if (eng) {
-        if (!validExpertId) validExpertId = eng.id; // assign engineer as primary provider
+        if (!validExpertId) validExpertId = eng.id;
+        totalBaseRate += eng.serviceRate ?? 0;
         adminNotesParts.push(`المهندس المختار: ${eng.name} (${eng.id})`);
       }
     }
@@ -83,15 +86,19 @@ export async function POST(req: Request) {
     if (lawyerId) {
       const law = await prisma.user.findFirst({
         where: { id: lawyerId, role: "EXPERT", specialty: "LAWYER", verified: true, active: true },
-        select: { id: true, name: true },
+        select: { id: true, name: true, serviceRate: true },
       });
       if (law) {
-        if (!validExpertId) validExpertId = law.id; // fallback if no engineer
+        if (!validExpertId) validExpertId = law.id;
+        totalBaseRate += law.serviceRate ?? 0;
         adminNotesParts.push(`المحامي المختار: ${law.name} (${law.id})`);
       }
     }
 
     const autoAdminNotes = adminNotesParts.length > 0 ? adminNotesParts.join(" | ") : undefined;
+
+    // Calculate price: expert rate + 25% platform fee
+    const packagePrice = totalBaseRate > 0 ? calculateTotalPrice(totalBaseRate) : 0;
 
     // 1. Create Property
     const property = await prisma.property.create({
@@ -110,7 +117,7 @@ export async function POST(req: Request) {
           propertyId: property.id,
           providerId: validExpertId || undefined,
           packageName: selectedPkg.name,
-          packagePrice: selectedPkg.price,
+          packagePrice: packagePrice,
           paymentMethod: "CASH",
           paymentStatus: "CASH",
           status: "PENDING",
@@ -134,13 +141,13 @@ export async function POST(req: Request) {
         propertyId: property.id,
         providerId: validExpertId || undefined,
         packageName: selectedPkg.name,
-        packagePrice: selectedPkg.price,
+        packagePrice: packagePrice,
         paymentMethod: "ONLINE",
         paymentStatus: "PENDING",
         status: "PENDING",
         scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
         notes,
-        adminNotes: validExpertId ? "العميل اختار هذا الخبير" : undefined,
+        adminNotes: autoAdminNotes,
       },
     });
 
@@ -148,7 +155,7 @@ export async function POST(req: Request) {
     const transaction = await prisma.transaction.create({
       data: {
         requestId: inspectionRequest.id,
-        amount: selectedPkg.price,
+        amount: packagePrice,
         currency: "EGP",
         paymentMethod: "FAWATERK",
         status: "PENDING",
@@ -173,7 +180,7 @@ export async function POST(req: Request) {
       hashKey,
       transactionId: transaction.id,
       requestId: inspectionRequest.id,
-      amount: selectedPkg.price,
+      amount: packagePrice,
       paymentMethod: "ONLINE",
       user: {
         first_name: user.name?.split(" ")[0] || "Client",

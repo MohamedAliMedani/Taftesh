@@ -15,16 +15,22 @@ export const SITE_CONFIG = {
   fallbackEmail: "client@taftesh.com",
 };
 
+// Platform fee percentage (25%)
+export const PLATFORM_FEE_PERCENT = 0.25;
+
+export function calculateTotalPrice(expertRate: number): number {
+  return Math.ceil(expertRate * (1 + PLATFORM_FEE_PERCENT));
+}
+
 export type PackageName = "LEGAL" | "TECHNICAL" | "FULL";
 
 export const PACKAGES: Record<
   PackageName,
-  { name: PackageName; nameAr: string; price: number; desc: string; features: string[] }
+  { name: PackageName; nameAr: string; desc: string; features: string[] }
 > = {
   TECHNICAL: {
     name: "TECHNICAL",
     nameAr: "الفحص الهندسي",
-    price: Number(process.env.NEXT_PUBLIC_PRICE_TECHNICAL) || 5000,
     desc: "فحص شامل للمواسير، الكهرباء، المعمار",
     features: [
       "فحص السباكة والصرف",
@@ -36,7 +42,6 @@ export const PACKAGES: Record<
   LEGAL: {
     name: "LEGAL",
     nameAr: "المراجعة القانونية",
-    price: Number(process.env.NEXT_PUBLIC_PRICE_LEGAL) || 5000,
     desc: "مراجعة عقود، تراخيص، وتاريخ الملكية",
     features: [
       "فحص تسلسل الملكية",
@@ -48,7 +53,6 @@ export const PACKAGES: Record<
   FULL: {
     name: "FULL",
     nameAr: "الأمان الشامل",
-    price: Number(process.env.NEXT_PUBLIC_PRICE_FULL) || 8000,
     desc: "الخدمة الهندسية والقانونية معاً",
     features: [
       "كل مميزات الفحص الهندسي",

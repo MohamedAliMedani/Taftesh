@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import { motion } from "framer-motion";
-import { PACKAGES } from "@/lib/config";
+import { PACKAGES, calculateTotalPrice } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
 import Dropdown from "@/components/ui/Dropdown";
 
@@ -32,11 +32,12 @@ function CheckoutContent() {
   const lawyerId = searchParams.get("lawyerId");
 
   const [propertyAddress, setPropertyAddress] = useState("");
-  const [selectedExpert, setSelectedExpert] = useState<{name: string; profileImage: string | null; specialty: string} | null>(null);
-  const [selectedEngineer, setSelectedEngineer] = useState<{name: string; profileImage: string | null} | null>(null);
-  const [selectedLawyer, setSelectedLawyer] = useState<{name: string; profileImage: string | null} | null>(null);
+  const [selectedExpert, setSelectedExpert] = useState<{name: string; profileImage: string | null; specialty: string; serviceRate: number | null} | null>(null);
+  const [selectedEngineer, setSelectedEngineer] = useState<{name: string; profileImage: string | null; serviceRate: number | null} | null>(null);
+  const [selectedLawyer, setSelectedLawyer] = useState<{name: string; profileImage: string | null; serviceRate: number | null} | null>(null);
   const [propertyArea, setPropertyArea] = useState("");
   const [propertyType, setPropertyType] = useState("");
+  const [today] = useState(() => new Date().toISOString().split("T")[0]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -47,6 +48,13 @@ function CheckoutContent() {
   const [cashSuccess, setCashSuccess] = useState(false);
 
   const selectedPkg = PACKAGES[pkgQuery] || PACKAGES.FULL;
+
+  // Calculate total price dynamically from expert rates + 25% platform fee
+  const expertRate = selectedExpert?.serviceRate ?? 0;
+  const engineerRate = selectedEngineer?.serviceRate ?? 0;
+  const lawyerRate = selectedLawyer?.serviceRate ?? 0;
+  const baseRate = pkgQuery === "FULL" ? engineerRate + lawyerRate : expertRate;
+  const totalPrice = baseRate > 0 ? calculateTotalPrice(baseRate) : 0;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -62,15 +70,15 @@ function CheckoutContent() {
           const all = data.data || [];
           if (expertId) {
             const expert = all.find((e: any) => e.id === expertId);
-            if (expert) setSelectedExpert({ name: expert.name, profileImage: expert.profileImage, specialty: expert.specialty });
+            if (expert) setSelectedExpert({ name: expert.name, profileImage: expert.profileImage, specialty: expert.specialty, serviceRate: expert.serviceRate });
           }
           if (engineerId) {
             const eng = all.find((e: any) => e.id === engineerId);
-            if (eng) setSelectedEngineer({ name: eng.name, profileImage: eng.profileImage });
+            if (eng) setSelectedEngineer({ name: eng.name, profileImage: eng.profileImage, serviceRate: eng.serviceRate });
           }
           if (lawyerId) {
             const law = all.find((e: any) => e.id === lawyerId);
-            if (law) setSelectedLawyer({ name: law.name, profileImage: law.profileImage });
+            if (law) setSelectedLawyer({ name: law.name, profileImage: law.profileImage, serviceRate: law.serviceRate });
           }
         })
         .catch(() => {});
@@ -81,9 +89,18 @@ function CheckoutContent() {
     return <div className="min-h-screen flex items-center justify-center text-amber-500">جاري التحقق...</div>;
   }
 
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touchField = (f: string) => setTouched((p) => ({ ...p, [f]: true }));
+  const fieldErrors = {
+    address: !propertyAddress.trim() ? "عنوان العقار مطلوب" : propertyAddress.trim().length < 10 ? "يرجى كتابة عنوان تفصيلي" : "",
+    date: !selectedDate ? "تاريخ الفحص مطلوب" : "",
+    time: !selectedTime ? "وقت الفحص مطلوب" : "",
+  };
+
   const handlePayment = async () => {
-    if (!propertyAddress || !selectedDate || !selectedTime) {
-      setError("يرجى إكمال عنوان العقار وتحديد الموعد والتاريخ.");
+    setTouched({ address: true, date: true, time: true });
+    if (fieldErrors.address || fieldErrors.date || fieldErrors.time) {
+      setError("يرجى تصحيح الأخطاء المشار إليها");
       return;
     }
 
@@ -198,16 +215,16 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-24 px-6 relative bg-[#0a0a0b]">
+    <div className="min-h-screen pt-24 md:pt-32 pb-16 md:pb-24 px-4 md:px-6 relative bg-[#0a0a0b]">
       <Script src="https://app.fawaterk.com/fawaterkPlugin/fawaterkPlugin.min.js" strategy="lazyOnload" />
       <div className="hero-glow opacity-30" />
 
-      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 relative z-10">
+      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 relative z-10">
         {/* Order Summary */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-card p-8 rounded-3xl self-start sticky top-32"
+          className="glass-card p-6 md:p-8 rounded-2xl md:rounded-3xl self-start lg:sticky top-24 md:top-32"
         >
           <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-6">
             <LogoMark size={48} />
@@ -277,9 +294,17 @@ function CheckoutContent() {
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-6 flex justify-between items-end">
-            <div className="text-sm text-muted-foreground">الإجمالي</div>
-            <div className="text-3xl font-bold text-amber-400 italic">{selectedPkg.price.toLocaleString()} ج.م</div>
+          <div className="border-t border-white/10 pt-6">
+            {totalPrice > 0 ? (
+              <div className="flex justify-between items-end">
+                <div className="text-sm text-muted-foreground">الإجمالي <span className="text-[10px]">(شامل رسوم المنصة 25%)</span></div>
+                <div className="text-3xl font-bold text-amber-400 italic">{totalPrice.toLocaleString()} ج.م</div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground text-center">
+                يتم تحديد السعر بناءً على الخبير المختار
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -291,23 +316,24 @@ function CheckoutContent() {
         >
           {!paymentReady ? (
             <>
-              <h1 className="text-3xl font-bold outfit">إتمام الحجز</h1>
+              <h1 className="text-2xl md:text-3xl font-bold outfit">إتمام الحجز</h1>
               <p className="text-muted-foreground">أدخل تفاصيل العقار لنتمكن من توجيه الخبير المناسب.</p>
 
               <div className="space-y-5">
                 {/* Property Address */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label className="text-sm font-bold text-white">عنوان العقار بالتفصيل *</label>
-                  <div className="glass flex items-start px-4 py-4 rounded-2xl focus-within:ring-2 ring-amber-500/50 border border-white/5">
+                  <div className={`glass flex items-start px-4 py-3 md:py-4 rounded-2xl focus-within:ring-2 border transition-all ${touched.address && fieldErrors.address ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
                     <MapPin className="w-5 h-5 text-amber-500 mt-1 ml-3 flex-shrink-0" />
                     <textarea
                       value={propertyAddress}
                       onChange={(e) => setPropertyAddress(e.target.value)}
+                      onBlur={() => touchField("address")}
                       placeholder="مثال: مدينة نصر، شارع عباس العقاد، عمارة 5، الدور الخامس..."
-                      className="bg-transparent border-none outline-none text-sm w-full min-h-[80px] resize-none"
-                      required
+                      className="bg-transparent border-none outline-none text-sm w-full min-h-[70px] md:min-h-[80px] resize-none"
                     />
                   </div>
+                  {touched.address && fieldErrors.address && <p className="text-[11px] text-red-400 mr-2">{fieldErrors.address}</p>}
                 </div>
 
                 {/* Area & Type */}
@@ -346,32 +372,34 @@ function CheckoutContent() {
 
                 {/* Date & Time */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label className="text-sm font-bold text-white">تاريخ الفحص *</label>
-                    <div className="glass flex items-center px-4 py-3 rounded-2xl border border-white/5">
-                      <CalendarClock className="w-5 h-5 text-amber-500 ml-3" />
+                    <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.date && fieldErrors.date ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
+                      <CalendarClock className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
                       <input
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        min={new Date().toISOString().split("T")[0]}
+                        onBlur={() => touchField("date")}
+                        min={today}
                         className="bg-transparent border-none outline-none text-sm w-full text-white cursor-pointer"
-                        required
                       />
                     </div>
+                    {touched.date && fieldErrors.date && <p className="text-[11px] text-red-400 mr-2">{fieldErrors.date}</p>}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label className="text-sm font-bold text-white">الوقت المناسب *</label>
-                    <div className="glass flex items-center px-4 py-3 rounded-2xl border border-white/5">
-                      <Clock className="w-5 h-5 text-amber-500 ml-3" />
+                    <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.time && fieldErrors.time ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
+                      <Clock className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
                       <input
                         type="time"
                         value={selectedTime}
                         onChange={(e) => setSelectedTime(e.target.value)}
+                        onBlur={() => touchField("time")}
                         className="bg-transparent border-none outline-none text-sm w-full text-white cursor-pointer"
-                        required
                       />
                     </div>
+                    {touched.time && fieldErrors.time && <p className="text-[11px] text-red-400 mr-2">{fieldErrors.time}</p>}
                   </div>
                 </div>
 
