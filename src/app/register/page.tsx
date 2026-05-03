@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   User, Phone, Lock, AlertCircle, Chrome, Facebook,
-  Briefcase, Mail, Upload, FileText, Clock, CheckCircle2, Shield
+  Briefcase, Mail, Upload, FileText, Clock, CheckCircle2, Shield,
+  Camera, CreditCard, Banknote
 } from "lucide-react";
+import Dropdown from "@/components/ui/Dropdown";
 import { LogoMark } from "@/components/ui/Logo";
 import { SITE_CONFIG } from "@/lib/config";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +30,11 @@ export default function RegisterPage() {
   const [experienceYears, setExperienceYears] = useState("");
   const [nationalIdImage, setNationalIdImage] = useState("");
   const [nationalIdPreview, setNationalIdPreview] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [profileImagePreview, setProfileImagePreview] = useState("");
+  const [syndicateCardImage, setSyndicateCardImage] = useState("");
+  const [syndicateCardPreview, setSyndicateCardPreview] = useState("");
+  const [serviceRate, setServiceRate] = useState("");
   const [uploading, setUploading] = useState(false);
 
   // State
@@ -36,35 +43,38 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileInputRef = useRef<HTMLInputElement>(null);
+  const syndicateInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Preview
+  const handleUpload = async (
+    file: File,
+    folder: string,
+    setUrl: (url: string) => void,
+    setPreview: (preview: string) => void,
+  ) => {
     const reader = new FileReader();
-    reader.onload = (ev) => setNationalIdPreview(ev.target?.result as string);
+    reader.onload = (ev) => setPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
 
-    // Upload
     setUploading(true);
     setError("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", folder);
 
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
 
       if (res.ok && data.url) {
-        setNationalIdImage(data.url);
+        setUrl(data.url);
       } else {
         setError(data.error || "فشل رفع الصورة");
-        setNationalIdPreview("");
+        setPreview("");
       }
     } catch {
       setError("فشل رفع الصورة");
-      setNationalIdPreview("");
+      setPreview("");
     }
     setUploading(false);
   };
@@ -93,6 +103,12 @@ export default function RegisterPage() {
       return;
     }
 
+    if (userType === "EXPERT" && !syndicateCardImage) {
+      setError("يرجى رفع صورة كارت النقابة");
+      setLoading(false);
+      return;
+    }
+
     try {
       const body: Record<string, unknown> = {
         name,
@@ -108,6 +124,9 @@ export default function RegisterPage() {
         body.bio = bio || undefined;
         body.experienceYears = experienceYears ? parseInt(experienceYears) : undefined;
         body.nationalIdImage = nationalIdImage;
+        body.profileImage = profileImage || undefined;
+        body.syndicateCardImage = syndicateCardImage;
+        body.serviceRate = serviceRate ? parseFloat(serviceRate) : undefined;
       }
 
       const response = await fetch("/api/register", {
@@ -264,12 +283,56 @@ export default function RegisterPage() {
                 {/* Specialty */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">التخصص *</label>
-                  <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
-                    <Briefcase className="w-5 h-5 text-muted-foreground ml-3" />
-                    <select value={specialty} onChange={(e) => setSpecialty(e.target.value as "ENGINEER" | "LAWYER")} className="bg-transparent border-none outline-none text-sm w-full font-medium appearance-none text-white [&>option]:text-black">
-                      <option value="ENGINEER">مهندس استشاري</option>
-                      <option value="LAWYER">محامي عقاري</option>
-                    </select>
+                  <Dropdown
+                    value={specialty}
+                    onChange={(v) => setSpecialty(v as "ENGINEER" | "LAWYER")}
+                    options={[
+                      { value: "ENGINEER", label: "مهندس استشاري" },
+                      { value: "LAWYER", label: "محامي عقاري" },
+                    ]}
+                    icon={<Briefcase className="w-5 h-5 text-muted-foreground" />}
+                  />
+                </div>
+
+                {/* Profile Image */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-amber-500/80 mr-2">صورة شخصية</label>
+                  <div
+                    onClick={() => profileInputRef.current?.click()}
+                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${
+                      profileImage ? "border-green-500/30" : "border-white/10"
+                    } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+                  >
+                    <input
+                      ref={profileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpload(file, "profile-images", setProfileImage, setProfileImagePreview);
+                      }}
+                      className="hidden"
+                    />
+                    {profileImagePreview ? (
+                      <div className="p-4 flex flex-col items-center">
+                        <div className="relative">
+                          <img src={profileImagePreview} alt="صورة شخصية" className="w-24 h-24 object-cover rounded-full border-2 border-amber-500/30" />
+                          <div className="absolute -bottom-1 -left-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            تم
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">اضغط لتغيير الصورة</p>
+                      </div>
+                    ) : (
+                      <div className="p-6 text-center">
+                        <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Camera className="w-6 h-6 text-amber-400" />
+                        </div>
+                        <p className="text-sm font-bold mb-1">رفع صورة شخصية</p>
+                        <p className="text-xs text-muted-foreground">ستظهر للعملاء عند اختيار الخبير</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -282,12 +345,63 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* Service Rate */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-amber-500/80 mr-2">سعر الخدمة (ج.م)</label>
+                  <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
+                    <Banknote className="w-5 h-5 text-muted-foreground ml-3" />
+                    <input type="number" min="0" value={serviceRate} onChange={(e) => setServiceRate(e.target.value)} placeholder="مثال: 500" className="bg-transparent border-none outline-none text-sm w-full font-medium" />
+                  </div>
+                </div>
+
                 {/* Bio */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-amber-500/80 mr-2">نبذة عنك ومؤهلاتك</label>
                   <div className="glass flex items-start px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
                     <FileText className="w-5 h-5 text-muted-foreground ml-3 mt-0.5" />
                     <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="اكتب نبذة مختصرة عن خبرتك ومؤهلاتك..." className="bg-transparent border-none outline-none text-sm w-full font-medium resize-none h-20" />
+                  </div>
+                </div>
+
+                {/* Syndicate Card Upload */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-amber-500/80 mr-2">صورة كارت النقابة *</label>
+                  <div
+                    onClick={() => syndicateInputRef.current?.click()}
+                    className={`glass rounded-2xl border-2 border-dashed transition-all cursor-pointer hover:bg-white/5 ${
+                      syndicateCardImage ? "border-green-500/30" : "border-white/10"
+                    } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+                  >
+                    <input
+                      ref={syndicateInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpload(file, "syndicate-cards", setSyndicateCardImage, setSyndicateCardPreview);
+                      }}
+                      className="hidden"
+                    />
+                    {syndicateCardPreview ? (
+                      <div className="p-4">
+                        <div className="relative">
+                          <img src={syndicateCardPreview} alt="كارت النقابة" className="w-full h-40 object-cover rounded-xl" />
+                          <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            تم الرفع
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center mt-2">اضغط لتغيير الصورة</p>
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <CreditCard className="w-7 h-7 text-amber-400" />
+                        </div>
+                        <p className="text-sm font-bold mb-1">اضغط لرفع صورة كارت النقابة</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG أو WEBP — الحد الأقصى 5 ميجا</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -304,18 +418,16 @@ export default function RegisterPage() {
                       ref={fileInputRef}
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      onChange={handleFileUpload}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpload(file, "national-ids", setNationalIdImage, setNationalIdPreview);
+                      }}
                       className="hidden"
                     />
-
                     {nationalIdPreview ? (
                       <div className="p-4">
                         <div className="relative">
-                          <img
-                            src={nationalIdPreview}
-                            alt="صورة البطاقة"
-                            className="w-full h-40 object-cover rounded-xl"
-                          />
+                          <img src={nationalIdPreview} alt="صورة البطاقة" className="w-full h-40 object-cover rounded-xl" />
                           <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" />
                             تم الرفع
@@ -325,20 +437,11 @@ export default function RegisterPage() {
                       </div>
                     ) : (
                       <div className="p-8 text-center">
-                        {uploading ? (
-                          <>
-                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500 mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground">جاري رفع الصورة...</p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                              <Upload className="w-7 h-7 text-amber-400" />
-                            </div>
-                            <p className="text-sm font-bold mb-1">اضغط لرفع صورة البطاقة</p>
-                            <p className="text-xs text-muted-foreground">JPG, PNG أو WEBP — الحد الأقصى 5 ميجا</p>
-                          </>
-                        )}
+                        <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <Upload className="w-7 h-7 text-amber-400" />
+                        </div>
+                        <p className="text-sm font-bold mb-1">اضغط لرفع صورة البطاقة</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG أو WEBP — الحد الأقصى 5 ميجا</p>
                       </div>
                     )}
                   </div>

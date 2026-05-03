@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Users, Search, Shield, UserCheck, UserX, Phone, Mail, Calendar, Filter } from "lucide-react";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -75,19 +76,19 @@ export default function AdminUsersPage() {
             className="bg-transparent w-full py-3 text-sm outline-none"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <select
-            value={roleFilter}
-            onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-            className="glass px-4 py-3 rounded-xl text-sm border border-white/10 bg-transparent text-white [&>option]:text-black"
-          >
-            <option value="">كل الأدوار</option>
-            <option value="CLIENT">عملاء</option>
-            <option value="EXPERT">خبراء</option>
-            <option value="ADMIN">مديرين</option>
-          </select>
-        </div>
+        <Dropdown
+          value={roleFilter}
+          onChange={(v) => { setRoleFilter(v); setPage(1); }}
+          placeholder="كل الأدوار"
+          icon={<Filter className="w-4 h-4 text-muted-foreground" />}
+          allowClear
+          options={[
+            { value: "CLIENT", label: "عملاء" },
+            { value: "EXPERT", label: "خبراء" },
+            { value: "ADMIN", label: "مديرين" },
+          ]}
+          className="min-w-[160px]"
+        />
       </div>
 
       {/* Users table */}

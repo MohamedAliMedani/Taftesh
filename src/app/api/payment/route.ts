@@ -20,6 +20,9 @@ const paymentSchema = z.object({
     error: "يجب اختيار طريقة دفع صالحة",
   }),
   notes: z.string().optional(),
+  expertId: z.string().optional(),
+  engineerId: z.string().optional(),
+  lawyerId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -43,9 +46,52 @@ export async function POST(req: Request) {
       scheduledDate,
       paymentMethod,
       notes,
+      expertId,
+      engineerId,
+      lawyerId,
     } = validated.data;
 
     const selectedPkg = PACKAGES[packageName as PackageName];
+
+    // Validate expert(s) if selected
+    let validExpertId: string | undefined;
+    const adminNotesParts: string[] = [];
+
+    if (expertId) {
+      const expert = await prisma.user.findFirst({
+        where: { id: expertId, role: "EXPERT", verified: true, active: true },
+        select: { id: true, name: true },
+      });
+      if (expert) {
+        validExpertId = expert.id;
+        adminNotesParts.push(`العميل اختار الخبير: ${expert.name}`);
+      }
+    }
+
+    // For FULL package: validate engineer and lawyer separately
+    if (engineerId) {
+      const eng = await prisma.user.findFirst({
+        where: { id: engineerId, role: "EXPERT", specialty: "ENGINEER", verified: true, active: true },
+        select: { id: true, name: true },
+      });
+      if (eng) {
+        if (!validExpertId) validExpertId = eng.id; // assign engineer as primary provider
+        adminNotesParts.push(`المهندس المختار: ${eng.name} (${eng.id})`);
+      }
+    }
+
+    if (lawyerId) {
+      const law = await prisma.user.findFirst({
+        where: { id: lawyerId, role: "EXPERT", specialty: "LAWYER", verified: true, active: true },
+        select: { id: true, name: true },
+      });
+      if (law) {
+        if (!validExpertId) validExpertId = law.id; // fallback if no engineer
+        adminNotesParts.push(`المحامي المختار: ${law.name} (${law.id})`);
+      }
+    }
+
+    const autoAdminNotes = adminNotesParts.length > 0 ? adminNotesParts.join(" | ") : undefined;
 
     // 1. Create Property
     const property = await prisma.property.create({
@@ -62,6 +108,7 @@ export async function POST(req: Request) {
         data: {
           userId: user.id,
           propertyId: property.id,
+          providerId: validExpertId || undefined,
           packageName: selectedPkg.name,
           packagePrice: selectedPkg.price,
           paymentMethod: "CASH",
@@ -69,6 +116,7 @@ export async function POST(req: Request) {
           status: "PENDING",
           scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
           notes,
+          adminNotes: autoAdminNotes,
         },
       });
 
@@ -84,6 +132,7 @@ export async function POST(req: Request) {
       data: {
         userId: user.id,
         propertyId: property.id,
+        providerId: validExpertId || undefined,
         packageName: selectedPkg.name,
         packagePrice: selectedPkg.price,
         paymentMethod: "ONLINE",
@@ -91,6 +140,7 @@ export async function POST(req: Request) {
         status: "PENDING",
         scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
         notes,
+        adminNotes: validExpertId ? "العميل اختار هذا الخبير" : undefined,
       },
     });
 

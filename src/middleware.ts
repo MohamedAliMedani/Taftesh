@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Referrer-Policy", "origin-when-cross-origin");
 
   // Skip auth check for public routes
-  const publicPaths = ["/", "/login", "/register", "/api/auth", "/api/contact", "/api/register", "/api/upload"];
+  const publicPaths = ["/", "/login", "/register", "/experts", "/api/auth", "/api/contact", "/api/register", "/api/upload", "/api/experts"];
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
   if (isPublic || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
     return response;
@@ -51,6 +51,16 @@ export async function middleware(request: NextRequest) {
     if (role !== "EXPERT" && role !== "ADMIN") {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "ليس لديك صلاحية" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
+  // Client-only routes (checkout & payment)
+  if (pathname.startsWith("/checkout") || pathname.startsWith("/api/payment")) {
+    if (role !== "CLIENT") {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "هذه الخدمة متاحة للعملاء فقط" }, { status: 403 });
       }
       return NextResponse.redirect(new URL("/", request.url));
     }

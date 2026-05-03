@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { UserCheck, Star, ClipboardList, Phone, Filter, CheckCircle2, Search } from "lucide-react";
+import { UserCheck, Star, ClipboardList, Phone, Filter, CheckCircle2, Search, Banknote, CreditCard } from "lucide-react";
 import { SPECIALTY_LABELS } from "@/lib/types";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function AdminProvidersPage() {
   const [providers, setProviders] = useState<any[]>([]);
@@ -66,24 +67,28 @@ export default function AdminProvidersPage() {
             className="bg-transparent w-full py-3 text-sm outline-none"
           />
         </div>
-        <select
+        <Dropdown
           value={specialtyFilter}
-          onChange={(e) => setSpecialtyFilter(e.target.value)}
-          className="glass px-4 py-3 rounded-xl text-sm border border-white/10 bg-transparent text-white [&>option]:text-black"
-        >
-          <option value="">كل التخصصات</option>
-          <option value="ENGINEER">مهندسين</option>
-          <option value="LAWYER">محامين</option>
-        </select>
-        <select
+          onChange={setSpecialtyFilter}
+          placeholder="كل التخصصات"
+          allowClear
+          options={[
+            { value: "ENGINEER", label: "مهندسين" },
+            { value: "LAWYER", label: "محامين" },
+          ]}
+          className="min-w-[160px]"
+        />
+        <Dropdown
           value={verifiedFilter}
-          onChange={(e) => setVerifiedFilter(e.target.value)}
-          className="glass px-4 py-3 rounded-xl text-sm border border-white/10 bg-transparent text-white [&>option]:text-black"
-        >
-          <option value="">الكل</option>
-          <option value="true">معتمدين</option>
-          <option value="false">غير معتمدين</option>
-        </select>
+          onChange={setVerifiedFilter}
+          placeholder="الكل"
+          allowClear
+          options={[
+            { value: "true", label: "معتمدين" },
+            { value: "false", label: "غير معتمدين" },
+          ]}
+          className="min-w-[160px]"
+        />
       </div>
 
       {loading ? (
@@ -109,13 +114,17 @@ export default function AdminProvidersPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    provider.specialty === "ENGINEER" ? "bg-blue-500/10" : "bg-purple-500/10"
-                  }`}>
-                    <UserCheck className={`w-6 h-6 ${
-                      provider.specialty === "ENGINEER" ? "text-blue-400" : "text-purple-400"
-                    }`} />
-                  </div>
+                  {provider.profileImage ? (
+                    <img src={provider.profileImage} alt="" className="w-12 h-12 rounded-xl object-cover border border-white/10" />
+                  ) : (
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      provider.specialty === "ENGINEER" ? "bg-blue-500/10" : "bg-purple-500/10"
+                    }`}>
+                      <UserCheck className={`w-6 h-6 ${
+                        provider.specialty === "ENGINEER" ? "text-blue-400" : "text-purple-400"
+                      }`} />
+                    </div>
+                  )}
                   <div>
                     <div className="font-bold">{provider.name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -147,17 +156,25 @@ export default function AdminProvidersPage() {
                 )}
               </div>
 
-              {provider.nationalIdImage && (
-                <div className="mb-3">
-                  <a
-                    href={provider.nationalIdImage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                  >
+              <div className="flex flex-wrap gap-3 mb-3">
+                {provider.nationalIdImage && (
+                  <a href={provider.nationalIdImage} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors">
                     <img src={provider.nationalIdImage} alt="البطاقة" className="w-16 h-10 object-cover rounded-lg border border-white/10" />
-                    <span>عرض صورة البطاقة</span>
+                    <span>البطاقة</span>
                   </a>
+                )}
+                {provider.syndicateCardImage && (
+                  <a href={provider.syndicateCardImage} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-purple-400 hover:text-purple-300 transition-colors">
+                    <img src={provider.syndicateCardImage} alt="كارت النقابة" className="w-16 h-10 object-cover rounded-lg border border-white/10" />
+                    <span>كارت النقابة</span>
+                  </a>
+                )}
+              </div>
+
+              {provider.serviceRate != null && (
+                <div className="flex items-center gap-1 text-xs text-amber-400 mb-3">
+                  <Banknote className="w-3.5 h-3.5" />
+                  سعر الخدمة: {provider.serviceRate.toLocaleString()} ج.م
                 </div>
               )}
 

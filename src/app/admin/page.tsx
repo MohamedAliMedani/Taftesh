@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Users, UserCheck, ClipboardList, DollarSign,
-  Clock, CheckCircle2, TrendingUp, ArrowLeft
+  Clock, CheckCircle2, TrendingUp, ArrowLeft, Scale
 } from "lucide-react";
 import type { AdminStats } from "@/lib/types";
 
@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <button
           onClick={() => router.push("/admin/requests")}
           className="glass-card p-6 rounded-2xl text-right hover:bg-white/5 transition-colors group"
@@ -96,6 +96,15 @@ export default function AdminDashboardPage() {
           <h3 className="font-bold text-lg mb-1">المستخدمين</h3>
           <p className="text-sm text-muted-foreground">إدارة حسابات المستخدمين</p>
           <ArrowLeft className="w-5 h-5 text-blue-400 mt-4 group-hover:-translate-x-1 transition-transform" />
+        </button>
+        <button
+          onClick={() => router.push("/admin/continuations")}
+          className="glass-card p-6 rounded-2xl text-right hover:bg-white/5 transition-colors group"
+        >
+          <Scale className="w-8 h-8 text-purple-400 mb-3" />
+          <h3 className="font-bold text-lg mb-1">المتابعات القانونية</h3>
+          <p className="text-sm text-muted-foreground">إدارة طلبات المتابعة مع المحامين</p>
+          <ArrowLeft className="w-5 h-5 text-purple-400 mt-4 group-hover:-translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

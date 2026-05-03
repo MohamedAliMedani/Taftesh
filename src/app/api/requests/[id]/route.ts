@@ -28,6 +28,9 @@ export async function GET(
         reports: true,
         ratings: true,
         transactions: true,
+        continuations: {
+          orderBy: { createdAt: "desc" as const },
+        },
       },
     });
 

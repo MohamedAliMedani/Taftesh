@@ -12,6 +12,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { motion } from "framer-motion";
 import { PACKAGES } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function CheckoutPage() {
   return (
@@ -26,8 +27,14 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pkgQuery = (searchParams.get("package") as PackageName) || "FULL";
+  const expertId = searchParams.get("expertId");
+  const engineerId = searchParams.get("engineerId");
+  const lawyerId = searchParams.get("lawyerId");
 
   const [propertyAddress, setPropertyAddress] = useState("");
+  const [selectedExpert, setSelectedExpert] = useState<{name: string; profileImage: string | null; specialty: string} | null>(null);
+  const [selectedEngineer, setSelectedEngineer] = useState<{name: string; profileImage: string | null} | null>(null);
+  const [selectedLawyer, setSelectedLawyer] = useState<{name: string; profileImage: string | null} | null>(null);
   const [propertyArea, setPropertyArea] = useState("");
   const [propertyType, setPropertyType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -46,6 +53,29 @@ function CheckoutContent() {
       router.push(`/login?callbackUrl=/checkout?package=${pkgQuery}`);
     }
   }, [status, router, pkgQuery]);
+
+  useEffect(() => {
+    if (expertId || engineerId || lawyerId) {
+      fetch(`/api/experts?package=${pkgQuery}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const all = data.data || [];
+          if (expertId) {
+            const expert = all.find((e: any) => e.id === expertId);
+            if (expert) setSelectedExpert({ name: expert.name, profileImage: expert.profileImage, specialty: expert.specialty });
+          }
+          if (engineerId) {
+            const eng = all.find((e: any) => e.id === engineerId);
+            if (eng) setSelectedEngineer({ name: eng.name, profileImage: eng.profileImage });
+          }
+          if (lawyerId) {
+            const law = all.find((e: any) => e.id === lawyerId);
+            if (law) setSelectedLawyer({ name: law.name, profileImage: law.profileImage });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [expertId, engineerId, lawyerId, pkgQuery]);
 
   if (status === "loading" || status === "unauthenticated") {
     return <div className="min-h-screen flex items-center justify-center text-amber-500">جاري التحقق...</div>;
@@ -74,6 +104,9 @@ function CheckoutContent() {
           scheduledDate: scheduledDateTime.toISOString(),
           paymentMethod,
           notes: notes || undefined,
+          expertId: expertId || undefined,
+          engineerId: engineerId || undefined,
+          lawyerId: lawyerId || undefined,
         }),
       });
 
@@ -193,6 +226,51 @@ function CheckoutContent() {
               <span className="text-muted-foreground">الوصف:</span>
               <span className="text-end max-w-[200px]">{selectedPkg.desc}</span>
             </div>
+            {selectedExpert && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">الخبير:</span>
+                <div className="flex items-center gap-2">
+                  {selectedExpert.profileImage ? (
+                    <img src={selectedExpert.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-6 h-6 gold-gradient rounded-full flex items-center justify-center text-black text-[10px] font-bold">
+                      {selectedExpert.name?.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-bold">{selectedExpert.name}</span>
+                </div>
+              </div>
+            )}
+            {selectedEngineer && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">المهندس:</span>
+                <div className="flex items-center gap-2">
+                  {selectedEngineer.profileImage ? (
+                    <img src={selectedEngineer.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-[10px] font-bold">
+                      {selectedEngineer.name?.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-bold">{selectedEngineer.name}</span>
+                </div>
+              </div>
+            )}
+            {selectedLawyer && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">المحامي:</span>
+                <div className="flex items-center gap-2">
+                  {selectedLawyer.profileImage ? (
+                    <img src={selectedLawyer.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 text-[10px] font-bold">
+                      {selectedLawyer.name?.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-bold">{selectedLawyer.name}</span>
+                </div>
+              </div>
+            )}
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">طريقة الدفع:</span>
               <span className="font-bold">{paymentMethod === "CASH" ? "نقدي" : "أونلاين"}</span>
@@ -249,19 +327,20 @@ function CheckoutContent() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-white">نوع العقار</label>
-                    <select
+                    <Dropdown
                       value={propertyType}
-                      onChange={(e) => setPropertyType(e.target.value)}
-                      className="w-full glass px-4 py-3.5 rounded-2xl border border-white/5 bg-transparent text-sm [&>option]:text-black"
-                    >
-                      <option value="">اختر النوع</option>
-                      <option value="شقة">شقة</option>
-                      <option value="فيلا">فيلا</option>
-                      <option value="مكتب">مكتب</option>
-                      <option value="محل تجاري">محل تجاري</option>
-                      <option value="أرض">أرض</option>
-                      <option value="أخرى">أخرى</option>
-                    </select>
+                      onChange={setPropertyType}
+                      placeholder="اختر النوع"
+                      icon={<Building className="w-5 h-5 text-amber-500" />}
+                      options={[
+                        { value: "شقة", label: "شقة" },
+                        { value: "فيلا", label: "فيلا" },
+                        { value: "مكتب", label: "مكتب" },
+                        { value: "محل تجاري", label: "محل تجاري" },
+                        { value: "أرض", label: "أرض" },
+                        { value: "أخرى", label: "أخرى" },
+                      ]}
+                    />
                   </div>
                 </div>
 

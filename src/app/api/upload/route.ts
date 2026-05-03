@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: "نوع الملف غير مدعوم. يرجى رفع صورة (JPG, PNG, WEBP)" },
@@ -29,8 +29,9 @@ export async function POST(req: Request) {
     }
 
     // Generate unique filename
+    const folder = (formData.get("folder") as string) || "national-ids";
     const ext = file.name.split(".").pop() || "jpg";
-    const filename = `national-ids/${crypto.randomUUID()}.${ext}`;
+    const filename = `${folder}/${crypto.randomUUID()}.${ext}`;
 
     // Upload to Vercel Blob
     const blob = await put(filename, file, {

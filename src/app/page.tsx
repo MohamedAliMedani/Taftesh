@@ -12,7 +12,7 @@ export default function LandingPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const handleBooking = (pkgName: string) => {
-    router.push(`/checkout?package=${pkgName}`);
+    router.push(`/experts?package=${pkgName}`);
   };
 
   return (

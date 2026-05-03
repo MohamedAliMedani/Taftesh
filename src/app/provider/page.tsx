@@ -35,7 +35,7 @@ export default function ProviderDashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold outfit">أهلاً، {session?.user?.name}</h1>
-        <p className="text-muted-foreground mt-1">إليك الطلبات المعينة لك</p>
+        <p className="text-muted-foreground mt-1">طلباتي</p>
       </div>
 
       {/* Stats */}

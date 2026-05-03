@@ -6,13 +6,14 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
   MapPin, Calendar, Clock, Package, FileText, User,
-  CheckCircle2, AlertCircle, ArrowRight, Star, Download, Shield
+  CheckCircle2, AlertCircle, ArrowRight, Star, Download, Shield, Scale, Banknote
 } from "lucide-react";
 import { RequestStatusBadge, PaymentStatusBadge } from "@/components/ui/StatusBadge";
 import { StarRating } from "@/components/ui/StarRating";
-import { PACKAGE_LABELS, STATUS_LABELS } from "@/lib/types";
-import type { RequestStatus, PaymentStatus, PackageName } from "@/lib/types";
+import { PACKAGE_LABELS, STATUS_LABELS, CASE_TYPES, CASE_TYPE_LABELS, CONTINUATION_STATUS_LABELS } from "@/lib/types";
+import type { RequestStatus, PaymentStatus, PackageName, ContinuationStatus } from "@/lib/types";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function UserRequestDetailPage() {
   const { id } = useParams();
@@ -28,6 +29,16 @@ export default function UserRequestDetailPage() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
+  // Continuation
+  const [continuations, setContinuations] = useState<any[]>([]);
+  const [showContinuationForm, setShowContinuationForm] = useState(false);
+  const [contDetails, setContDetails] = useState("");
+  const [contCaseType, setContCaseType] = useState("");
+  const [submittingCont, setSubmittingCont] = useState(false);
+  const [acceptingCont, setAcceptingCont] = useState(false);
+  const [contLawyerId, setContLawyerId] = useState("");
+  const [availableLawyers, setAvailableLawyers] = useState<{id: string; name: string; profileImage: string | null}[]>([]);
+
   const fetchRequest = () => {
     fetch(`/api/requests/${id}`)
       .then((r) => r.json())
@@ -39,9 +50,19 @@ export default function UserRequestDetailPage() {
       .catch(() => setLoading(false));
   };
 
+  const fetchContinuations = () => {
+    fetch(`/api/requests/${id}/continuation`)
+      .then((r) => r.json())
+      .then((data) => setContinuations(data.data || []))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     if (authStatus === "unauthenticated") router.push("/login");
-    if (authStatus === "authenticated") fetchRequest();
+    if (authStatus === "authenticated") {
+      fetchRequest();
+      fetchContinuations();
+    }
   }, [authStatus, id]);
 
   const handleRate = async (e: React.FormEvent) => {
@@ -303,6 +324,226 @@ export default function UserRequestDetailPage() {
                 <StarRating value={r.score} readonly />
                 {r.comment && <p className="text-sm text-muted-foreground mt-2">{r.comment}</p>}
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Lawyer Continuation Section */}
+        {request.status === "COMPLETED" &&
+          (request.packageName === "LEGAL" || request.packageName === "FULL") && (
+          <div className="space-y-4">
+            {continuations.length === 0 && !showContinuationForm && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass-card p-6 rounded-2xl border-purple-500/20 bg-purple-500/5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Scale className="w-6 h-6 text-purple-400" />
+                    <div>
+                      <div className="font-bold">هل تحتاج متابعة قانونية؟</div>
+                      <div className="text-xs text-muted-foreground">يمكنك طلب متابعة مع محامي لاتخاذ إجراءات قانونية</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowContinuationForm(true);
+                      fetch("/api/experts?package=LEGAL")
+                        .then((r) => r.json())
+                        .then((data) => setAvailableLawyers(data.data || []))
+                        .catch(() => {});
+                    }}
+                    className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-5 py-2 rounded-xl text-sm font-bold hover:bg-purple-500/20 transition-colors"
+                  >
+                    طلب متابعة
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {showContinuationForm && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-6 rounded-2xl border-white/5"
+              >
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Scale className="w-5 h-5 text-purple-400" />
+                  طلب متابعة قانونية
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-amber-500/80">نوع القضية *</label>
+                    <Dropdown
+                      value={contCaseType}
+                      onChange={setContCaseType}
+                      placeholder="اختر نوع القضية"
+                      options={CASE_TYPES.map((ct) => ({ value: ct.value, label: ct.label }))}
+                    />
+                  </div>
+                  {availableLawyers.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-amber-500/80">اختر محامي (اختياري)</label>
+                      <Dropdown
+                        value={contLawyerId}
+                        onChange={setContLawyerId}
+                        placeholder="سيتم تعيين محامي من الإدارة"
+                        allowClear
+                        options={availableLawyers.map((l) => ({
+                          value: l.id,
+                          label: l.name,
+                        }))}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-amber-500/80">تفاصيل الطلب *</label>
+                    <textarea
+                      value={contDetails}
+                      onChange={(e) => setContDetails(e.target.value)}
+                      placeholder="اكتب تفاصيل ما تحتاجه من إجراءات قانونية..."
+                      className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm resize-none h-28"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={async () => {
+                        if (!contCaseType || contDetails.length < 10) return;
+                        setSubmittingCont(true);
+                        try {
+                          const res = await fetch(`/api/requests/${id}/continuation`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ details: contDetails, caseType: contCaseType, lawyerId: contLawyerId || undefined }),
+                          });
+                          if (res.ok) {
+                            setMessage({ text: "تم إرسال طلب المتابعة بنجاح", type: "success" });
+                            setShowContinuationForm(false);
+                            setContDetails("");
+                            setContCaseType("");
+                            fetchContinuations();
+                          } else {
+                            const data = await res.json();
+                            setMessage({ text: data.error || "فشل إرسال الطلب", type: "error" });
+                          }
+                        } catch {
+                          setMessage({ text: "حدث خطأ", type: "error" });
+                        }
+                        setSubmittingCont(false);
+                        setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                      }}
+                      disabled={!contCaseType || contDetails.length < 10 || submittingCont}
+                      className="flex-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 py-3 rounded-xl font-bold disabled:opacity-50 hover:bg-purple-500/30 transition-colors"
+                    >
+                      {submittingCont ? "جاري الإرسال..." : "إرسال الطلب"}
+                    </button>
+                    <button
+                      onClick={() => setShowContinuationForm(false)}
+                      className="px-6 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {continuations.map((cont: any) => (
+              <motion.div
+                key={cont.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass-card p-6 rounded-2xl border-white/5"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-purple-400" />
+                    <span className="font-bold">متابعة قانونية</span>
+                    <span className="text-xs text-muted-foreground">
+                      {CASE_TYPE_LABELS[cont.caseType] || cont.caseType}
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                    cont.status === "PENDING" ? "bg-amber-500/10 text-amber-400" :
+                    cont.status === "PRICED" ? "bg-blue-500/10 text-blue-400" :
+                    cont.status === "ACCEPTED" ? "bg-green-500/10 text-green-400" :
+                    cont.status === "IN_PROGRESS" ? "bg-purple-500/10 text-purple-400" :
+                    "bg-emerald-500/10 text-emerald-400"
+                  }`}>
+                    {CONTINUATION_STATUS_LABELS[cont.status as ContinuationStatus] || cont.status}
+                  </span>
+                </div>
+
+                <div className="bg-white/5 p-3 rounded-xl text-sm mb-4">{cont.details}</div>
+
+                {cont.status === "PRICED" && cont.cost != null && (
+                  <div className="flex items-center justify-between bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="w-5 h-5 text-blue-400" />
+                      <div>
+                        <div className="text-sm font-bold">تكلفة المتابعة</div>
+                        <div className="text-xl font-bold text-blue-400">{cont.cost.toLocaleString()} ج.م</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setAcceptingCont(true);
+                        try {
+                          const res = await fetch(`/api/requests/${id}/continuation/accept`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ continuationId: cont.id }),
+                          });
+                          if (res.ok) {
+                            setMessage({ text: "تم قبول طلب المتابعة", type: "success" });
+                            fetchContinuations();
+                          } else {
+                            const data = await res.json();
+                            setMessage({ text: data.error || "فشل القبول", type: "error" });
+                          }
+                        } catch {
+                          setMessage({ text: "حدث خطأ", type: "error" });
+                        }
+                        setAcceptingCont(false);
+                        setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                      }}
+                      disabled={acceptingCont}
+                      className="gold-gradient text-black px-6 py-2 rounded-xl font-bold disabled:opacity-50"
+                    >
+                      {acceptingCont ? "جاري القبول..." : "قبول"}
+                    </button>
+                  </div>
+                )}
+
+                {cont.status === "PENDING" && (
+                  <div className="text-sm text-amber-400/70 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    طلبك قيد المراجعة من الإدارة — سيتم تحديد التكلفة قريباً
+                  </div>
+                )}
+
+                {cont.status === "ACCEPTED" && (
+                  <div className="text-sm text-green-400/70 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    تم قبول الطلب — سيتم بدء العمل قريباً
+                  </div>
+                )}
+
+                {cont.status === "IN_PROGRESS" && (
+                  <div className="text-sm text-purple-400/70 flex items-center gap-2">
+                    <Scale className="w-4 h-4" />
+                    المحامي يعمل على قضيتك
+                  </div>
+                )}
+
+                {cont.status === "COMPLETED" && (
+                  <div className="text-sm text-emerald-400/70 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    تم الانتهاء من المتابعة القانونية بنجاح
+                  </div>
+                )}
+              </motion.div>
             ))}
           </div>
         )}

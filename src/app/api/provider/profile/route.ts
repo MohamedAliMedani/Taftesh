@@ -7,6 +7,8 @@ const updateProfileSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب").optional(),
   bio: z.string().optional(),
   email: z.string().email("بريد إلكتروني غير صالح").optional(),
+  profileImage: z.string().optional(),
+  serviceRate: z.number().min(0).optional(),
 });
 
 export async function GET() {
@@ -22,6 +24,9 @@ export async function GET() {
         email: true,
         specialty: true,
         bio: true,
+        profileImage: true,
+        syndicateCardImage: true,
+        serviceRate: true,
         verified: true,
       },
     });
@@ -60,7 +65,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const { name, bio, email } = parsed.data;
+    const { name, bio, email, profileImage, serviceRate } = parsed.data;
 
     if (email) {
       const existing = await prisma.user.findUnique({
@@ -78,6 +83,8 @@ export async function PATCH(request: Request) {
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
     if (email !== undefined) updateData.email = email;
+    if (profileImage !== undefined) updateData.profileImage = profileImage;
+    if (serviceRate !== undefined) updateData.serviceRate = serviceRate;
 
     const updated = await prisma.user.update({
       where: { id: sessionUser.id },
@@ -89,6 +96,8 @@ export async function PATCH(request: Request) {
         email: true,
         specialty: true,
         bio: true,
+        profileImage: true,
+        serviceRate: true,
         verified: true,
       },
     });

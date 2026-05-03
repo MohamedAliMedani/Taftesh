@@ -50,6 +50,33 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = {
 };
 
 // ──────────────────────────────────────────────
+// Continuation (Lawyer Follow-up)
+// ──────��─────────────────��─────────────────────
+
+export type ContinuationStatus = "PENDING" | "PRICED" | "ACCEPTED" | "IN_PROGRESS" | "COMPLETED";
+
+export const CONTINUATION_STATUS_LABELS: Record<ContinuationStatus, string> = {
+  PENDING: "في انتظار التسعير",
+  PRICED: "تم تحديد التكلفة",
+  ACCEPTED: "تم القبول",
+  IN_PROGRESS: "جاري التنفيذ",
+  COMPLETED: "مكتمل",
+};
+
+export const CASE_TYPES = [
+  { value: "OWNERSHIP_DISPUTE", label: "نزاع ملكية" },
+  { value: "CONTRACT_DISPUTE", label: "نزاع تعاقدي" },
+  { value: "REGISTRATION", label: "تسجيل عقاري" },
+  { value: "EVICTION", label: "دعوى إخلاء" },
+  { value: "COMPENSATION", label: "تعوي��" },
+  { value: "OTHER", label: "أخرى" },
+] as const;
+
+export const CASE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  CASE_TYPES.map((ct) => [ct.value, ct.label])
+);
+
+// ──────────────────────────────────────────────
 // API Response Types
 // ──────────────────────────────────────────────
 

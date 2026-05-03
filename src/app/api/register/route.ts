@@ -16,6 +16,9 @@ const baseSchema = z.object({
   bio: z.string().optional(),
   experienceYears: z.number().int().min(0).max(60).optional(),
   nationalIdImage: z.string().optional(), // URL from upload endpoint
+  profileImage: z.string().optional(),
+  syndicateCardImage: z.string().optional(),
+  serviceRate: z.number().min(0).optional(),
 });
 
 export async function POST(req: Request) {
@@ -33,6 +36,7 @@ export async function POST(req: Request) {
     const {
       name, phone, password, confirmPassword, email,
       userType, specialty, bio, experienceYears, nationalIdImage,
+      profileImage, syndicateCardImage, serviceRate,
     } = validatedData.data;
 
     // Confirm password match
@@ -47,6 +51,9 @@ export async function POST(req: Request) {
       }
       if (!nationalIdImage) {
         return NextResponse.json({ error: "يرجى رفع صورة البطاقة الشخصية" }, { status: 400 });
+      }
+      if (!syndicateCardImage) {
+        return NextResponse.json({ error: "يرجى رفع صورة كارت النقابة" }, { status: 400 });
       }
     }
 
@@ -77,6 +84,9 @@ export async function POST(req: Request) {
         bio: userType === "EXPERT" ? bio : null,
         experienceYears: userType === "EXPERT" ? experienceYears : null,
         nationalIdImage: userType === "EXPERT" ? nationalIdImage : null,
+        profileImage: userType === "EXPERT" ? profileImage : null,
+        syndicateCardImage: userType === "EXPERT" ? syndicateCardImage : null,
+        serviceRate: userType === "EXPERT" ? serviceRate : null,
         verified: false,
       },
     });

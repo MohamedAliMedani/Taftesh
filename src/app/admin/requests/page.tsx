@@ -9,6 +9,7 @@ import {
 import { RequestStatusBadge, PaymentStatusBadge } from "@/components/ui/StatusBadge";
 import { PACKAGE_LABELS } from "@/lib/types";
 import type { RequestStatus, PaymentStatus, PackageName } from "@/lib/types";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -117,21 +118,21 @@ export default function AdminRequestsPage() {
           <h1 className="text-3xl font-bold outfit">إدارة الطلبات</h1>
           <p className="text-muted-foreground mt-1">عرض وتعيين ومتابعة جميع الطلبات</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="glass px-4 py-2 rounded-xl text-sm border border-white/10 bg-transparent text-white [&>option]:text-black"
-          >
-            <option value="">كل الحالات</option>
-            <option value="PENDING">قيد الانتظار</option>
-            <option value="ASSIGNED">تم التعيين</option>
-            <option value="IN_PROGRESS">جاري التنفيذ</option>
-            <option value="COMPLETED">مكتمل</option>
-            <option value="CANCELLED">ملغي</option>
-          </select>
-        </div>
+        <Dropdown
+          value={statusFilter}
+          onChange={setStatusFilter}
+          placeholder="كل الحالات"
+          icon={<Filter className="w-4 h-4 text-muted-foreground" />}
+          allowClear
+          options={[
+            { value: "PENDING", label: "قيد الانتظار" },
+            { value: "ASSIGNED", label: "تم التعيين" },
+            { value: "IN_PROGRESS", label: "جاري التنفيذ" },
+            { value: "COMPLETED", label: "مكتمل" },
+            { value: "CANCELLED", label: "ملغي" },
+          ]}
+          className="min-w-[180px]"
+        />
       </div>
 
       {/* Status message */}
@@ -288,19 +289,16 @@ export default function AdminRequestsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-amber-500/80">اختر الخبير المناسب</label>
-                <select
+                <Dropdown
                   value={selectedProvider}
-                  onChange={(e) => setSelectedProvider(e.target.value)}
-                  className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-white text-sm [&>option]:text-black"
-                >
-                  <option value="">-- اختر خبير --</option>
-                  {getMatchingProviders(assignModalRequest.packageName).map((p: any) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.specialty === "ENGINEER" ? "مهندس" : "محامي"})
-                      {p._count?.assignedRequests ? ` - ${p._count.assignedRequests} طلب` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedProvider}
+                  placeholder="-- اختر خبير --"
+                  icon={<UserPlus className="w-4 h-4 text-amber-400" />}
+                  options={getMatchingProviders(assignModalRequest.packageName).map((p: any) => ({
+                    value: p.id,
+                    label: `${p.name} (${p.specialty === "ENGINEER" ? "مهندس" : "محامي"})`,
+                  }))}
+                />
               </div>
 
               <div className="space-y-2">

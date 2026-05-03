@@ -62,7 +62,10 @@ model User {
   specialty       String?   // ENGINEER, LAWYER (for EXPERT role)
   bio             String?
   experienceYears Int?      // years of experience (experts)
-  nationalIdImage String?   // uploaded national ID image path (experts)
+  nationalIdImage    String?   // uploaded national ID image path (experts)
+  profileImage       String?   // expert profile photo URL
+  syndicateCardImage String?   // syndicate card image (كارت نقابة)
+  serviceRate        Float?    // expert service rate
   verified        Boolean   @default(false) // admin approval for experts
   active          Boolean   @default(true)
   createdAt     DateTime  @default(now())
@@ -76,6 +79,7 @@ model User {
   ratingsGiven       Rating[]                @relation("RaterRatings")
   ratingsReceived    Rating[]                @relation("RatedRatings")
   notifications      Notification[]
+  continuationRequests ContinuationRequest[]
 }
 
 model Property {
@@ -108,9 +112,10 @@ model InspectionRequest {
   user         User          @relation("ClientRequests", fields: [userId], references: [id])
   property     Property      @relation(fields: [propertyId], references: [id])
   provider     User?         @relation("ProviderRequests", fields: [providerId], references: [id])
-  reports      Report[]
-  transactions Transaction[]
-  ratings      Rating[]
+  reports       Report[]
+  transactions  Transaction[]
+  ratings       Rating[]
+  continuations ContinuationRequest[]
 }
 
 model Transaction {
@@ -170,6 +175,21 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model ContinuationRequest {
+  id        String   @id @default(cuid())
+  requestId String
+  details   String   @db.Text
+  caseType  String
+  lawyerId  String?  // client-preferred lawyer
+  cost      Float?
+  status    String   @default("PENDING") // PENDING, PRICED, ACCEPTED, IN_PROGRESS, COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request InspectionRequest @relation(fields: [requestId], references: [id])
+  lawyer  User?             @relation(fields: [lawyerId], references: [id])
 }
 
 model ContactMessage {
