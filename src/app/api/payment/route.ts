@@ -5,6 +5,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import { PACKAGES, SITE_CONFIG, calculateTotalPrice } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
+import { getServerT } from "@/lib/i18n/server";
 
 const paymentSchema = z.object({
   packageName: z.enum(["TECHNICAL", "LEGAL", "FULL"], {
@@ -27,6 +28,7 @@ const paymentSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const t = await getServerT();
     const user = await requireAuth();
 
     const body = await req.json();
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
 
     if (!validated.success) {
       const errorMessage =
-        validated.error.issues?.[0]?.message || "بيانات غير صالحة";
+        validated.error.issues?.[0]?.message || t("api.invalidData");
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
@@ -97,7 +99,7 @@ export async function POST(req: Request) {
 
     const autoAdminNotes = adminNotesParts.length > 0 ? adminNotesParts.join(" | ") : undefined;
 
-    // Calculate price: expert rate + 25% platform fee
+    // Calculate price from expert rate + platform fee
     const packagePrice = totalBaseRate > 0 ? calculateTotalPrice(totalBaseRate) : 0;
 
     // 1. Create Property
@@ -128,7 +130,7 @@ export async function POST(req: Request) {
       });
 
       return NextResponse.json({
-        message: "تم إنشاء الطلب بنجاح - الدفع عند الخدمة",
+        message: t("api.requestCreatedCash"),
         requestId: inspectionRequest.id,
         paymentMethod: "CASH",
       });

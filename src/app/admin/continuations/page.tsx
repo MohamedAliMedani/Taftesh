@@ -8,8 +8,10 @@ import {
 import { CASE_TYPE_LABELS, CONTINUATION_STATUS_LABELS } from "@/lib/types";
 import type { ContinuationStatus } from "@/lib/types";
 import Dropdown from "@/components/ui/Dropdown";
+import { useT } from "@/lib/i18n";
 
 export default function AdminContinuationsPage() {
+  const t = useT();
   const [continuations, setContinuations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -41,16 +43,16 @@ export default function AdminContinuationsPage() {
         body: JSON.stringify({ continuationId: costModal.id, cost: parseFloat(costValue) }),
       });
       if (res.ok) {
-        setMessage({ text: "تم تحديد التكلفة وإرسالها للعميل", type: "success" });
+        setMessage({ text: t("admin.continuations.costSent"), type: "success" });
         setCostModal(null);
         setCostValue("");
         fetchData();
       } else {
         const data = await res.json();
-        setMessage({ text: data.error || "فشل التحديث", type: "error" });
+        setMessage({ text: data.error || t("common.error"), type: "error" });
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setSaving(false);
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -64,11 +66,11 @@ export default function AdminContinuationsPage() {
         body: JSON.stringify({ continuationId, status }),
       });
       if (res.ok) {
-        setMessage({ text: "تم التحديث", type: "success" });
+        setMessage({ text: t("admin.users.updated"), type: "success" });
         fetchData();
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   };
@@ -77,21 +79,21 @@ export default function AdminContinuationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold outfit">المتابعات القانونية</h1>
-          <p className="text-muted-foreground mt-1">إدارة طلبات المتابعة مع المحامين</p>
+          <h1 className="text-3xl font-bold outfit">{t("admin.continuations.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("admin.continuations.subtitle")}</p>
         </div>
         <Dropdown
           value={statusFilter}
           onChange={setStatusFilter}
-          placeholder="كل الحالات"
+          placeholder={t("admin.continuations.allStatuses")}
           icon={<Filter className="w-4 h-4 text-muted-foreground" />}
           allowClear
           options={[
-            { value: "PENDING", label: "في انتظار التسعير" },
-            { value: "PRICED", label: "تم تحديد التكلفة" },
-            { value: "ACCEPTED", label: "تم القبول" },
-            { value: "IN_PROGRESS", label: "جاري التنفيذ" },
-            { value: "COMPLETED", label: "مكتمل" },
+            { value: "PENDING", label: t("admin.continuations.awaitingPricing") },
+            { value: "PRICED", label: t("admin.continuations.costDetermined") },
+            { value: "ACCEPTED", label: t("admin.continuations.accepted") },
+            { value: "IN_PROGRESS", label: t("admin.continuations.inProgress") },
+            { value: "COMPLETED", label: t("admin.continuations.completed") },
           ]}
           className="min-w-[200px]"
         />
@@ -119,7 +121,7 @@ export default function AdminContinuationsPage() {
       ) : continuations.length === 0 ? (
         <div className="glass-card p-16 text-center rounded-3xl">
           <Scale className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-          <p className="text-muted-foreground">لا توجد طلبات متابعة</p>
+          <p className="text-muted-foreground">{t("admin.continuations.noRequests")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -138,7 +140,7 @@ export default function AdminContinuationsPage() {
                   </div>
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-bold">{cont.request?.user?.name || "عميل"}</span>
+                      <span className="font-bold">{cont.request?.user?.name || t("admin.users.client")}</span>
                       <span className="text-xs text-muted-foreground font-mono">#{cont.requestId.slice(-6).toUpperCase()}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -159,7 +161,7 @@ export default function AdminContinuationsPage() {
 
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">الحالة</span>
+                    <span className="text-[10px] text-muted-foreground">{t("admin.continuations.status")}</span>
                     <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
                       cont.status === "PENDING" ? "bg-amber-500/10 text-amber-400" :
                       cont.status === "PRICED" ? "bg-blue-500/10 text-blue-400" :
@@ -173,14 +175,14 @@ export default function AdminContinuationsPage() {
 
                   {cont.cost != null && (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">التكلفة</span>
-                      <span className="text-amber-400 font-bold text-sm">{cont.cost.toLocaleString()} ج.م</span>
+                      <span className="text-[10px] text-muted-foreground">{t("admin.continuations.cost")}</span>
+                      <span className="text-amber-400 font-bold text-sm">{cont.cost.toLocaleString()} {t("common.currency")}</span>
                     </div>
                   )}
 
                   {(cont.lawyer || cont.request?.provider) && (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">{cont.lawyer ? "المحامي المختار" : "المحامي"}</span>
+                      <span className="text-[10px] text-muted-foreground">{cont.lawyer ? t("admin.continuations.selectedLawyer") : t("admin.continuations.lawyer")}</span>
                       <span className="text-xs font-bold text-emerald-400">{cont.lawyer?.name || cont.request?.provider?.name}</span>
                     </div>
                   )}
@@ -192,7 +194,7 @@ export default function AdminContinuationsPage() {
                       className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition-colors border border-amber-500/20"
                     >
                       <Banknote className="w-4 h-4" />
-                      تحديد التكلفة
+                      {t("admin.continuations.setCost")}
                     </button>
                   )}
 
@@ -201,7 +203,7 @@ export default function AdminContinuationsPage() {
                       onClick={() => handleStatusUpdate(cont.id, "IN_PROGRESS")}
                       className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl text-xs font-bold hover:bg-purple-500/20 transition-colors border border-purple-500/20"
                     >
-                      بدء التنفيذ
+                      {t("admin.continuations.startExecution")}
                     </button>
                   )}
 
@@ -211,7 +213,7 @@ export default function AdminContinuationsPage() {
                       className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-400 rounded-xl text-xs font-bold hover:bg-green-500/20 transition-colors border border-green-500/20"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      إنهاء
+                      {t("admin.continuations.complete")}
                     </button>
                   )}
                 </div>
@@ -230,14 +232,14 @@ export default function AdminContinuationsPage() {
             className="glass-card p-8 rounded-3xl w-full max-w-md border border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold outfit mb-2">تحديد تكلفة المتابعة</h2>
+            <h2 className="text-xl font-bold outfit mb-2">{t("admin.continuations.setCostTitle")}</h2>
             <p className="text-sm text-muted-foreground mb-6">
               {costModal.request?.user?.name} — {CASE_TYPE_LABELS[costModal.caseType] || costModal.caseType}
             </p>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">التكلفة (ج.م) *</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("admin.continuations.costLabel")} {t("common.required")}</label>
                 <div className="glass flex items-center px-4 py-3.5 rounded-2xl focus-within:ring-2 ring-amber-500/50 transition-all border border-white/5">
                   <Banknote className="w-5 h-5 text-amber-500 ml-3" />
                   <input
@@ -245,7 +247,7 @@ export default function AdminContinuationsPage() {
                     min="1"
                     value={costValue}
                     onChange={(e) => setCostValue(e.target.value)}
-                    placeholder="مثال: 3000"
+                    placeholder={t("admin.continuations.costPlaceholder")}
                     className="bg-transparent border-none outline-none text-sm w-full font-medium"
                     autoFocus
                   />
@@ -258,13 +260,13 @@ export default function AdminContinuationsPage() {
                   disabled={!costValue || parseFloat(costValue) <= 0 || saving}
                   className="flex-1 gold-gradient text-black py-3 rounded-xl font-bold disabled:opacity-50"
                 >
-                  {saving ? "جاري الحفظ..." : "إرسال التكلفة للعميل"}
+                  {saving ? t("profile.saving") : t("admin.continuations.sendCost")}
                 </button>
                 <button
                   onClick={() => setCostModal(null)}
                   className="px-6 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5"
                 >
-                  إلغاء
+                  {t("common.cancel")}
                 </button>
               </div>
             </div>

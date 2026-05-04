@@ -9,6 +9,7 @@ import {
 import { LogoMark } from "@/components/ui/Logo";
 import { PACKAGES, calculateTotalPrice } from "@/lib/config";
 import { SPECIALTY_LABELS } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface Expert {
   id: string;
@@ -32,6 +33,7 @@ function ExpertCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const t = useT();
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -72,12 +74,12 @@ function ExpertCard({
         <div className="flex items-center gap-1">
           <Star className={`w-4 h-4 ${expert.avgRating ? "fill-amber-400 text-amber-400" : "text-white/20"}`} />
           <span className="text-sm font-bold">{expert.avgRating ?? "—"}</span>
-          <span className="text-xs text-muted-foreground">({expert.totalRatings} تقييم)</span>
+          <span className="text-xs text-muted-foreground">({expert.totalRatings} {t("experts.rating")})</span>
         </div>
         {expert.completedRequests > 0 && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-            {expert.completedRequests} طلب مكتمل
+            {expert.completedRequests} {t("experts.completedRequest")}
           </div>
         )}
       </div>
@@ -86,14 +88,13 @@ function ExpertCard({
         {expert.experienceYears != null && (
           <div className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            {expert.experienceYears} سنة خبرة
+            {expert.experienceYears} {t("experts.yearsExperience")}
           </div>
         )}
         {expert.serviceRate != null && (
           <div className="flex items-center gap-1">
             <Briefcase className="w-3.5 h-3.5" />
-            <span className="text-amber-400 font-bold">{calculateTotalPrice(expert.serviceRate).toLocaleString()} ج.م</span>
-            <span className="text-[10px] text-muted-foreground">(شامل رسوم المنصة)</span>
+            <span className="text-amber-400 font-bold">{calculateTotalPrice(expert.serviceRate).toLocaleString()} {t("common.currency")}</span>
           </div>
         )}
       </div>
@@ -113,7 +114,7 @@ function ExpertCard({
             : "gold-gradient text-black hover:brightness-110 active:scale-[0.98] shadow-amber-500/10"
         }`}
       >
-        {selected ? "تم الاختيار ✓" : "اختر هذا الخبير"}
+        {selected ? t("experts.selected") : t("experts.selectThis")}
       </button>
     </motion.div>
   );
@@ -122,6 +123,7 @@ function ExpertCard({
 function ExpertsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useT();
   const packageName = searchParams.get("package") || "FULL";
   const [experts, setExperts] = useState<Expert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,7 +176,7 @@ function ExpertsContent() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-amber-400 transition-colors mb-8"
         >
           <ArrowRight className="w-4 h-4" />
-          العودة للباقات
+          {t("nav.backToPackages")}
         </button>
 
         <div className="flex items-center gap-4 mb-4">
@@ -187,12 +189,12 @@ function ExpertsContent() {
         </div>
 
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold outfit mb-2">
-          {isFull ? "اختر المهندس ��المحامي" : "اختر الخبير المناسب"}
+          {isFull ? t("experts.chooseEngineerAndLawyer") : t("experts.chooseExpert")}
         </h1>
         <p className="text-muted-foreground">
           {isFull
-            ? "باقة الأمان الشامل تتضمن فحص هندسي ومراجعة قانونية — اختر خبيراً من كل تخصص"
-            : "تصفح الخبراء المعتمدين واختر من يناسبك"}
+            ? t("experts.fullPackageDesc")
+            : t("experts.browseExperts")}
         </p>
       </div>
 
@@ -219,8 +221,8 @@ function ExpertsContent() {
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
               <User className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-bold mb-2">لا يوجد خبراء متاحين حالياً</h3>
-            <p className="text-muted-foreground text-sm">يرجى المحاولة لاحقاً أو اختيار باقة أخرى</p>
+            <h3 className="text-xl font-bold mb-2">{t("experts.noExperts")}</h3>
+            <p className="text-muted-foreground text-sm">{t("experts.tryLater")}</p>
           </div>
         ) : isFull ? (
           /* FULL package: two sections - engineers and lawyers */
@@ -229,12 +231,12 @@ function ExpertsContent() {
             <div>
               <h2 className="text-xl font-bold outfit mb-1 flex items-center gap-2">
                 <span className="w-3 h-3 bg-blue-400 rounded-full" />
-                اختر المهندس
+                {t("experts.chooseEngineer")}
               </h2>
-              <p className="text-sm text-muted-foreground mb-6">المهندس المسؤول عن الفحص الفني للعقار</p>
+              <p className="text-sm text-muted-foreground mb-6">{t("experts.engineerDesc")}</p>
               {engineers.length === 0 ? (
                 <div className="glass-card p-8 text-center rounded-2xl text-muted-foreground text-sm">
-                  لا يوجد مهندسين متاحين حالياً
+                  {t("experts.noEngineers")}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -256,12 +258,12 @@ function ExpertsContent() {
             <div>
               <h2 className="text-xl font-bold outfit mb-1 flex items-center gap-2">
                 <span className="w-3 h-3 bg-purple-400 rounded-full" />
-                اختر المحامي
+                {t("experts.chooseLawyer")}
               </h2>
-              <p className="text-sm text-muted-foreground mb-6">المحامي المسؤول عن المراجعة القانونية</p>
+              <p className="text-sm text-muted-foreground mb-6">{t("experts.lawyerDesc")}</p>
               {lawyers.length === 0 ? (
                 <div className="glass-card p-8 text-center rounded-2xl text-muted-foreground text-sm">
-                  لا يوجد محامين متاحين حالياً
+                  {t("experts.noLawyers")}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -286,16 +288,16 @@ function ExpertsContent() {
                   <div className="flex items-center gap-3">
                     {selectedEngineerId && (
                       <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-lg">
-                        مهندس ✓
+                        {t("experts.engineerCheck")}
                       </span>
                     )}
                     {selectedLawyerId && (
                       <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-xs font-bold rounded-lg">
-                        محامي ✓
+                        {t("experts.lawyerCheck")}
                       </span>
                     )}
                     {!selectedEngineerId && !selectedLawyerId && (
-                      <span className="text-muted-foreground text-xs">اختر خبيراً واحداً على الأقل</span>
+                      <span className="text-muted-foreground text-xs">{t("experts.selectAtLeastOne")}</span>
                     )}
                   </div>
                 </div>
@@ -303,7 +305,7 @@ function ExpertsContent() {
                   onClick={handleProceed}
                   className="gold-gradient text-black px-8 py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
                 >
-                  متابعة للحجز
+                  {t("experts.proceedBooking")}
                 </button>
               </div>
             </div>
@@ -314,7 +316,7 @@ function ExpertsContent() {
                 onClick={() => router.push(`/checkout?package=${packageName}`)}
                 className="text-sm text-muted-foreground hover:text-amber-400 transition-colors underline underline-offset-4"
               >
-                متابعة بدون اختيار — سيتم تعيين الخبراء من الإدارة
+                {t("experts.skipSelection")}
               </button>
             </div>
           </div>

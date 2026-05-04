@@ -15,7 +15,7 @@ export const SITE_CONFIG = {
   fallbackEmail: "client@taftesh.com",
 };
 
-// Platform fee percentage (25%)
+// Platform fee percentage
 export const PLATFORM_FEE_PERCENT = 0.25;
 
 export function calculateTotalPrice(expertRate: number): number {
@@ -68,4 +68,23 @@ export const PACKAGE_LABELS: Record<PackageName, string> = {
   TECHNICAL: PACKAGES.TECHNICAL.nameAr,
   LEGAL: PACKAGES.LEGAL.nameAr,
   FULL: PACKAGES.FULL.nameAr,
+};
+
+// i18n keys for package names/descriptions — use with t()
+export const PACKAGE_NAME_KEYS: Record<PackageName, string> = {
+  TECHNICAL: "pkg.technical.name",
+  LEGAL: "pkg.legal.name",
+  FULL: "pkg.full.name",
+};
+
+export const PACKAGE_DESC_KEYS: Record<PackageName, string> = {
+  TECHNICAL: "pkg.technical.desc",
+  LEGAL: "pkg.legal.desc",
+  FULL: "pkg.full.desc",
+};
+
+export const PACKAGE_FEATURE_KEYS: Record<PackageName, string[]> = {
+  TECHNICAL: ["pkg.technical.f1", "pkg.technical.f2", "pkg.technical.f3", "pkg.technical.f4"],
+  LEGAL: ["pkg.legal.f1", "pkg.legal.f2", "pkg.legal.f3", "pkg.legal.f4"],
+  FULL: ["pkg.full.f1", "pkg.full.f2", "pkg.full.f3", "pkg.full.f4", "pkg.full.f5"],
 };

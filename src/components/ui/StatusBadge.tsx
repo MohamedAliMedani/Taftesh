@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 import type { RequestStatus, PaymentStatus } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -17,18 +17,35 @@ const statusColors: Record<string, string> = {
   APPROVED: "bg-green-500/15 text-green-400 border-green-500/20",
 };
 
+const statusKeys: Record<string, string> = {
+  PENDING: "status.pending",
+  ASSIGNED: "status.assigned",
+  IN_PROGRESS: "status.inProgress",
+  COMPLETED: "status.completed",
+  CANCELLED: "status.cancelled",
+};
+
+const paymentStatusKeys: Record<string, string> = {
+  PENDING: "paymentStatus.pending",
+  PAID: "paymentStatus.paid",
+  FAILED: "paymentStatus.failed",
+  CASH: "paymentStatus.cash",
+};
+
 export function RequestStatusBadge({ status }: { status: RequestStatus }) {
+  const t = useT();
   return (
     <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${statusColors[status] || statusColors.PENDING}`}>
-      {STATUS_LABELS[status] || status}
+      {t(statusKeys[status] || status)}
     </span>
   );
 }
 
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  const t = useT();
   return (
     <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${statusColors[status] || statusColors.PENDING}`}>
-      {PAYMENT_STATUS_LABELS[status] || status}
+      {t(paymentStatusKeys[status] || status)}
     </span>
   );
 }

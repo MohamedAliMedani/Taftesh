@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, handleApiError } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { getServerT } from "@/lib/i18n/server";
 
 // GET — List all continuation requests
 export async function GET(request: Request) {
@@ -38,13 +39,14 @@ export async function GET(request: Request) {
 // PATCH — Admin sets cost or updates status
 export async function PATCH(request: Request) {
   try {
+    const t = await getServerT();
     await requireRole("ADMIN");
 
     const body = await request.json();
     const { continuationId, cost, status } = body;
 
     if (!continuationId) {
-      return NextResponse.json({ error: "معرف طلب المتابعة مطلوب" }, { status: 400 });
+      return NextResponse.json({ error: t("api.continuationIdRequired") }, { status: 400 });
     }
 
     const continuation = await prisma.continuationRequest.findUnique({
@@ -55,7 +57,7 @@ export async function PATCH(request: Request) {
     });
 
     if (!continuation) {
-      return NextResponse.json({ error: "طلب المتابعة غير موجود" }, { status: 404 });
+      return NextResponse.json({ error: t("api.continuationNotFound") }, { status: 404 });
     }
 
     const updateData: Record<string, unknown> = {};
@@ -63,7 +65,7 @@ export async function PATCH(request: Request) {
     // Admin setting cost → status becomes PRICED
     if (cost !== undefined && cost !== null) {
       if (typeof cost !== "number" || cost <= 0) {
-        return NextResponse.json({ error: "التكلفة يجب أن تكون رقم موجب" }, { status: 400 });
+        return NextResponse.json({ error: t("api.costPositive") }, { status: 400 });
       }
       updateData.cost = cost;
       updateData.status = "PRICED";
@@ -110,7 +112,7 @@ export async function PATCH(request: Request) {
       data: updateData,
     });
 
-    return NextResponse.json({ data: updated, message: "تم التحديث بنجاح" });
+    return NextResponse.json({ data: updated, message: t("api.updated") });
   } catch (error) {
     return handleApiError(error);
   }

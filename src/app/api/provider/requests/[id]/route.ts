@@ -3,6 +3,7 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { requireRole, AuthError, handleApiError } from "@/lib/auth";
 import { notifyStatusUpdate } from "@/lib/notifications";
+import { getServerT } from "@/lib/i18n/server";
 
 const updateStatusSchema = z.object({
   status: z.enum(["IN_PROGRESS", "COMPLETED"], {
@@ -20,6 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireRole("EXPERT");
     const { id } = await params;
 
@@ -39,11 +41,11 @@ export async function GET(
     });
 
     if (!inspectionRequest) {
-      throw new AuthError("الطلب غير موجود", 404);
+      throw new AuthError(t("api.requestNotFound"), 404);
     }
 
     if (inspectionRequest.providerId !== user.id) {
-      throw new AuthError("ليس لديك صلاحية للوصول لهذا الطلب", 403);
+      throw new AuthError(t("api.noPermission"), 403);
     }
 
     return NextResponse.json(inspectionRequest);
@@ -57,6 +59,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireRole("EXPERT");
     const { id } = await params;
 
@@ -65,7 +68,7 @@ export async function PATCH(
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message || "بيانات غير صالحة" },
+        { error: parsed.error.issues[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -77,11 +80,11 @@ export async function PATCH(
     });
 
     if (!inspectionRequest) {
-      throw new AuthError("الطلب غير موجود", 404);
+      throw new AuthError(t("api.requestNotFound"), 404);
     }
 
     if (inspectionRequest.providerId !== user.id) {
-      throw new AuthError("ليس لديك صلاحية لتحديث هذا الطلب", 403);
+      throw new AuthError(t("api.noPermission"), 403);
     }
 
     const allowedNext = ALLOWED_TRANSITIONS[inspectionRequest.status];
@@ -106,7 +109,7 @@ export async function PATCH(
 
     await notifyStatusUpdate(inspectionRequest.userId, id, newStatus);
 
-    return NextResponse.json({ data: updated, message: "تم تحديث حالة الطلب بنجاح" });
+    return NextResponse.json({ data: updated, message: t("api.statusUpdated") });
   } catch (error) {
     return handleApiError(error);
   }

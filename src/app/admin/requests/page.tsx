@@ -10,8 +10,10 @@ import { RequestStatusBadge, PaymentStatusBadge } from "@/components/ui/StatusBa
 import { PACKAGE_LABELS } from "@/lib/types";
 import type { RequestStatus, PaymentStatus, PackageName } from "@/lib/types";
 import Dropdown from "@/components/ui/Dropdown";
+import { useT } from "@/lib/i18n";
 
 export default function AdminRequestsPage() {
+  const t = useT();
   const [requests, setRequests] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,17 +54,17 @@ export default function AdminRequestsPage() {
         }),
       });
       if (res.ok) {
-        setMessage({ text: "تم تعيين الخبير بنجاح", type: "success" });
+        setMessage({ text: t("admin.requests.assignSuccess"), type: "success" });
         setAssignModalRequest(null);
         setSelectedProvider("");
         setAdminNotes("");
         fetchRequests();
       } else {
         const data = await res.json();
-        setMessage({ text: data.error || "فشل التعيين", type: "error" });
+        setMessage({ text: data.error || t("admin.requests.assignFailed"), type: "error" });
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setAssigning(false);
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -76,11 +78,11 @@ export default function AdminRequestsPage() {
         body: JSON.stringify({ requestId, status }),
       });
       if (res.ok) {
-        setMessage({ text: "تم تحديث الحالة", type: "success" });
+        setMessage({ text: t("admin.requests.statusUpdated"), type: "success" });
         fetchRequests();
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   };
@@ -93,11 +95,11 @@ export default function AdminRequestsPage() {
         body: JSON.stringify({ requestId, paymentStatus }),
       });
       if (res.ok) {
-        setMessage({ text: "تم تحديث حالة الدفع", type: "success" });
+        setMessage({ text: t("admin.requests.paymentUpdated"), type: "success" });
         fetchRequests();
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   };
@@ -115,21 +117,21 @@ export default function AdminRequestsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold outfit">إدارة الطلبات</h1>
-          <p className="text-muted-foreground mt-1">عرض وتعيين ومتابعة جميع الطلبات</p>
+          <h1 className="text-3xl font-bold outfit">{t("admin.requests.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("admin.requests.subtitle")}</p>
         </div>
         <Dropdown
           value={statusFilter}
           onChange={setStatusFilter}
-          placeholder="كل الحالات"
+          placeholder={t("admin.requests.allStatuses")}
           icon={<Filter className="w-4 h-4 text-muted-foreground" />}
           allowClear
           options={[
-            { value: "PENDING", label: "قيد الانتظار" },
-            { value: "ASSIGNED", label: "تم التعيين" },
-            { value: "IN_PROGRESS", label: "جاري التنفيذ" },
-            { value: "COMPLETED", label: "مكتمل" },
-            { value: "CANCELLED", label: "ملغي" },
+            { value: "PENDING", label: t("admin.requests.pending") },
+            { value: "ASSIGNED", label: t("admin.requests.assigned") },
+            { value: "IN_PROGRESS", label: t("admin.requests.inProgress") },
+            { value: "COMPLETED", label: t("admin.requests.completed") },
+            { value: "CANCELLED", label: t("admin.requests.cancelled") },
           ]}
           className="min-w-[180px]"
         />
@@ -158,7 +160,7 @@ export default function AdminRequestsPage() {
       ) : requests.length === 0 ? (
         <div className="glass-card p-16 text-center rounded-3xl">
           <ClipboardList className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-          <p className="text-muted-foreground">لا توجد طلبات</p>
+          <p className="text-muted-foreground">{t("admin.requests.noRequests")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -178,7 +180,7 @@ export default function AdminRequestsPage() {
                   </div>
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-bold">{req.user?.name || "بدون اسم"}</span>
+                      <span className="font-bold">{req.user?.name || t("admin.users.noName")}</span>
                       <span className="text-xs text-muted-foreground font-mono">#{req.id.slice(-6).toUpperCase()}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -191,7 +193,7 @@ export default function AdminRequestsPage() {
                       {req.user?.phone && <span className="mr-2">| {req.user.phone}</span>}
                     </div>
                     {req.notes && (
-                      <div className="text-xs text-amber-500/60 mt-1">ملاحظات: {req.notes}</div>
+                      <div className="text-xs text-amber-500/60 mt-1">{t("admin.requests.notes")} {req.notes}</div>
                     )}
                   </div>
                 </div>
@@ -199,28 +201,28 @@ export default function AdminRequestsPage() {
                 {/* Badges & Actions */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">الباقة</span>
+                    <span className="text-[10px] text-muted-foreground">{t("admin.requests.package")}</span>
                     <span className="px-3 py-1 bg-white/5 rounded-lg text-xs font-bold">
                       {PACKAGE_LABELS[req.packageName as PackageName] || req.packageName}
                     </span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">السعر</span>
-                    <span className="text-amber-400 font-bold text-sm">{req.packagePrice?.toLocaleString()} ج.م</span>
+                    <span className="text-[10px] text-muted-foreground">{t("admin.requests.price")}</span>
+                    <span className="text-amber-400 font-bold text-sm">{req.packagePrice?.toLocaleString()} {t("common.currency")}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">الحالة</span>
+                    <span className="text-[10px] text-muted-foreground">{t("admin.requests.status")}</span>
                     <RequestStatusBadge status={req.status as RequestStatus} />
                   </div>
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">الدفع</span>
+                    <span className="text-[10px] text-muted-foreground">{t("admin.requests.paymentStatus")}</span>
                     <PaymentStatusBadge status={req.paymentStatus as PaymentStatus} />
                   </div>
 
                   {/* Provider info or assign button */}
                   {req.provider ? (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">الخبير</span>
+                      <span className="text-[10px] text-muted-foreground">{t("admin.requests.expert")}</span>
                       <span className="text-xs font-bold text-emerald-400">{req.provider.name}</span>
                     </div>
                   ) : (
@@ -229,7 +231,7 @@ export default function AdminRequestsPage() {
                       className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition-colors border border-amber-500/20"
                     >
                       <UserPlus className="w-4 h-4" />
-                      تعيين خبير
+                      {t("admin.requests.assignExpert")}
                     </button>
                   )}
 
@@ -244,7 +246,7 @@ export default function AdminRequestsPage() {
                           onClick={() => handlePaymentUpdate(req.id, "PAID")}
                           className="w-full text-right px-3 py-2 text-xs rounded-lg hover:bg-white/5 text-green-400"
                         >
-                          تأكيد الدفع
+                          {t("admin.requests.confirmPayment")}
                         </button>
                       )}
                       {req.status !== "CANCELLED" && (
@@ -252,7 +254,7 @@ export default function AdminRequestsPage() {
                           onClick={() => handleStatusUpdate(req.id, "CANCELLED")}
                           className="w-full text-right px-3 py-2 text-xs rounded-lg hover:bg-white/5 text-red-400"
                         >
-                          إلغاء الطلب
+                          {t("admin.requests.cancelRequest")}
                         </button>
                       )}
                       {req.status === "PENDING" && (
@@ -260,7 +262,7 @@ export default function AdminRequestsPage() {
                           onClick={() => handleStatusUpdate(req.id, "IN_PROGRESS")}
                           className="w-full text-right px-3 py-2 text-xs rounded-lg hover:bg-white/5 text-purple-400"
                         >
-                          بدء التنفيذ
+                          {t("admin.requests.startExecution")}
                         </button>
                       )}
                     </div>
@@ -281,32 +283,32 @@ export default function AdminRequestsPage() {
             className="glass-card p-8 rounded-3xl w-full max-w-lg border border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold outfit mb-2">تعيين خبير</h2>
+            <h2 className="text-xl font-bold outfit mb-2">{t("admin.requests.assignTitle")}</h2>
             <p className="text-sm text-muted-foreground mb-6">
               الطلب #{assignModalRequest.id.slice(-6).toUpperCase()} - {PACKAGE_LABELS[assignModalRequest.packageName as PackageName]}
             </p>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">اختر الخبير المناسب</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("admin.requests.chooseExpert")}</label>
                 <Dropdown
                   value={selectedProvider}
                   onChange={setSelectedProvider}
-                  placeholder="-- اختر خبير --"
+                  placeholder={t("admin.requests.selectExpert")}
                   icon={<UserPlus className="w-4 h-4 text-amber-400" />}
                   options={getMatchingProviders(assignModalRequest.packageName).map((p: any) => ({
                     value: p.id,
-                    label: `${p.name} (${p.specialty === "ENGINEER" ? "مهندس" : "محامي"})`,
+                    label: `${p.name} (${p.specialty === "ENGINEER" ? t("common.engineer") : t("common.lawyer")})`,
                   }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">ملاحظات إدارية (اختياري)</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("admin.requests.adminNotes")}</label>
                 <textarea
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="ملاحظات داخلية..."
+                  placeholder={t("admin.requests.adminNotesPlaceholder")}
                   className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm resize-none h-20"
                 />
               </div>
@@ -317,13 +319,13 @@ export default function AdminRequestsPage() {
                   disabled={!selectedProvider || assigning}
                   className="flex-1 gold-gradient text-black py-3 rounded-xl font-bold disabled:opacity-50"
                 >
-                  {assigning ? "جاري التعيين..." : "تعيين الخبير"}
+                  {assigning ? t("admin.requests.assigning") : t("admin.requests.assignButton")}
                 </button>
                 <button
                   onClick={() => setAssignModalRequest(null)}
                   className="px-6 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5"
                 >
-                  إلغاء
+                  {t("common.cancel")}
                 </button>
               </div>
             </div>

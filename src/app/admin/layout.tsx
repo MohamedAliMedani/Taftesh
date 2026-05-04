@@ -9,13 +9,15 @@ import {
   MessageSquare, LogOut, Menu, X, Bell, ChevronLeft
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { useT } from "@/lib/i18n";
+import LanguageToggle from "@/components/ui/LanguageToggle";
 
-const navItems = [
-  { label: "لوحة التحكم", href: "/admin", icon: LayoutDashboard },
-  { label: "الطلبات", href: "/admin/requests", icon: ClipboardList },
-  { label: "المستخدمين", href: "/admin/users", icon: Users },
-  { label: "مقدمي الخدمات", href: "/admin/providers", icon: UserCheck },
-  { label: "الرسائل", href: "/admin/messages", icon: MessageSquare },
+const navKeys = [
+  { key: "admin.nav.dashboard", href: "/admin", icon: LayoutDashboard },
+  { key: "admin.nav.requests", href: "/admin/requests", icon: ClipboardList },
+  { key: "admin.nav.users", href: "/admin/users", icon: Users },
+  { key: "admin.nav.providers", href: "/admin/providers", icon: UserCheck },
+  { key: "admin.nav.messages", href: "/admin/messages", icon: MessageSquare },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const t = useT();
 
   if (status === "loading") return <FullPageLoader />;
   if (!session) return null;
@@ -46,8 +49,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-3">
               <Logo size="sm" showText={false} />
               <div>
-                <div className="font-bold outfit text-lg">أمانك</div>
-                <div className="text-[10px] text-amber-500/60 font-bold">لوحة الإدارة</div>
+                <div className="font-bold outfit text-lg">{t("admin.nav.brandName")}</div>
+                <div className="text-[10px] text-amber-500/60 font-bold">{t("admin.nav.panel")}</div>
               </div>
             </div>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
@@ -57,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
+          {navKeys.map((item) => {
             const isActive = pathname === item.href;
             return (
               <button
@@ -70,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }`}
               >
                 <item.icon className="w-5 h-5" />
-                {item.label}
+                {t(item.key)}
               </button>
             );
           })}
@@ -79,14 +82,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t border-white/5">
           <div className="glass p-3 rounded-xl mb-3">
             <div className="text-sm font-bold">{session.user?.name}</div>
-            <div className="text-xs text-muted-foreground">مدير النظام</div>
+            <div className="text-xs text-muted-foreground">{t("admin.nav.sysAdmin")}</div>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            تسجيل الخروج
+            {t("admin.nav.logout")}
           </button>
         </div>
       </aside>
@@ -104,6 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageToggle />
             <button
               onClick={() => router.push("/admin/notifications")}
               className="relative text-muted-foreground hover:text-white transition-colors"
@@ -113,7 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

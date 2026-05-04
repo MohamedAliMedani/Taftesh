@@ -2,9 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+const msgs = {
+  ar: { unauthorized: "غير مصرح لك بالوصول", forbidden: "ليس لديك صلاحية", clientOnly: "هذه الخدمة متاحة للعملاء فقط" },
+  en: { unauthorized: "You are not authorized", forbidden: "You do not have permission", clientOnly: "This service is available for clients only" },
+};
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const { pathname } = request.nextUrl;
+
+  const lang = request.cookies.get("lang")?.value || "ar";
+  const m = msgs[lang as "ar" | "en"] || msgs.ar;
 
   // Security headers
   response.headers.set("X-DNS-Prefetch-Control", "on");
@@ -27,7 +35,7 @@ export async function middleware(request: NextRequest) {
   // Redirect unauthenticated users to login
   if (!token) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "غير مصرح لك بالوصول" }, { status: 401 });
+      return NextResponse.json({ error: m.unauthorized }, { status: 401 });
     }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
@@ -40,7 +48,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     if (role !== "ADMIN") {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json({ error: "ليس لديك صلاحية" }, { status: 403 });
+        return NextResponse.json({ error: m.forbidden }, { status: 403 });
       }
       return NextResponse.redirect(new URL("/", request.url));
     }
@@ -50,7 +58,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/provider") || pathname.startsWith("/api/provider")) {
     if (role !== "EXPERT" && role !== "ADMIN") {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json({ error: "ليس لديك صلاحية" }, { status: 403 });
+        return NextResponse.json({ error: m.forbidden }, { status: 403 });
       }
       return NextResponse.redirect(new URL("/", request.url));
     }
@@ -60,7 +68,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/checkout") || pathname.startsWith("/api/payment")) {
     if (role !== "CLIENT") {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json({ error: "هذه الخدمة متاحة للعملاء فقط" }, { status: 403 });
+        return NextResponse.json({ error: m.clientOnly }, { status: 403 });
       }
       return NextResponse.redirect(new URL("/", request.url));
     }

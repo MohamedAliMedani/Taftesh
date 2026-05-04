@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Briefcase, FileText, CheckCircle2, AlertCircle, Star } from "lucide-react";
 import { StarRating } from "@/components/ui/StarRating";
+import { useT } from "@/lib/i18n";
 
 export default function ProviderProfilePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -13,6 +14,7 @@ export default function ProviderProfilePage() {
   const [bio, setBio] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
+  const t = useT();
 
   useEffect(() => {
     fetch("/api/provider/profile")
@@ -37,12 +39,12 @@ export default function ProviderProfilePage() {
         body: JSON.stringify({ name, bio, email }),
       });
       if (res.ok) {
-        setMessage({ text: "تم حفظ التعديلات", type: "success" });
+        setMessage({ text: t("profile.saved"), type: "success" });
       } else {
-        setMessage({ text: "فشل الحفظ", type: "error" });
+        setMessage({ text: t("profile.saveFailed"), type: "error" });
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setSaving(false);
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -55,8 +57,8 @@ export default function ProviderProfilePage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold outfit">الملف الشخصي</h1>
-        <p className="text-muted-foreground mt-1">إدارة معلوماتك الشخصية</p>
+        <h1 className="text-3xl font-bold outfit">{t("profile.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("profile.subtitle")}</p>
       </div>
 
       {message.text && (
@@ -82,7 +84,7 @@ export default function ProviderProfilePage() {
             <div className="font-bold text-xl">{profile?.name}</div>
             <div className="text-sm text-muted-foreground flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
-              {profile?.specialty === "ENGINEER" ? "مهندس استشاري" : "محامي عقاري"}
+              {profile?.specialty === "ENGINEER" ? t("profile.consultingEngineer") : t("profile.realEstateLawyer")}
             </div>
           </div>
           <div className="text-center">
@@ -90,22 +92,22 @@ export default function ProviderProfilePage() {
               <Star className="w-5 h-5 text-amber-400" />
               <span className="text-xl font-bold">{profile?.avgRating?.toFixed(1) || "---"}</span>
             </div>
-            <div className="text-xs text-muted-foreground">التقييم</div>
+            <div className="text-xs text-muted-foreground">{t("profile.rating")}</div>
           </div>
           <div className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
             profile?.verified ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"
           }`}>
-            {profile?.verified ? "معتمد" : "غير معتمد"}
+            {profile?.verified ? t("profile.verified") : t("profile.notVerified")}
           </div>
         </div>
       </div>
 
       {/* Edit Form */}
       <form onSubmit={handleSave} className="glass-card p-6 rounded-2xl border-white/5 space-y-5">
-        <h2 className="font-bold text-lg outfit">تعديل المعلومات</h2>
+        <h2 className="font-bold text-lg outfit">{t("profile.editInfo")}</h2>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-amber-500/80">الاسم</label>
+          <label className="text-xs font-bold text-amber-500/80">{t("profile.name")}</label>
           <div className="glass flex items-center px-4 py-3 rounded-xl border border-white/5">
             <User className="w-4 h-4 text-muted-foreground ml-3" />
             <input
@@ -118,7 +120,7 @@ export default function ProviderProfilePage() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-amber-500/80">البريد الإلكتروني</label>
+          <label className="text-xs font-bold text-amber-500/80">{t("profile.email")}</label>
           <div className="glass flex items-center px-4 py-3 rounded-xl border border-white/5">
             <Mail className="w-4 h-4 text-muted-foreground ml-3" />
             <input
@@ -131,21 +133,21 @@ export default function ProviderProfilePage() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-amber-500/80">نبذة عنك</label>
+          <label className="text-xs font-bold text-amber-500/80">{t("profile.aboutYou")}</label>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder="اكتب نبذة مختصرة عن خبرتك..."
+            placeholder={t("profile.aboutPlaceholder")}
             className="w-full glass p-4 rounded-xl border border-white/5 bg-transparent text-sm resize-none h-28"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-amber-500/80">رقم الهاتف</label>
+          <label className="text-xs font-bold text-amber-500/80">{t("profile.phone")}</label>
           <div className="glass flex items-center px-4 py-3 rounded-xl border border-white/5 opacity-50">
             <Phone className="w-4 h-4 text-muted-foreground ml-3" />
             <span className="text-sm">{profile?.phone}</span>
-            <span className="text-xs text-muted-foreground mr-auto">(لا يمكن تغييره)</span>
+            <span className="text-xs text-muted-foreground mr-auto">{t("profile.phoneReadonly")}</span>
           </div>
         </div>
 
@@ -154,7 +156,7 @@ export default function ProviderProfilePage() {
           disabled={saving}
           className="gold-gradient text-black px-8 py-3 rounded-xl font-bold disabled:opacity-50"
         >
-          {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
+          {saving ? t("profile.saving") : t("profile.save")}
         </button>
       </form>
     </div>

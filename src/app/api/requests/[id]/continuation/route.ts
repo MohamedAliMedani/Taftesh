@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth, handleApiError } from "@/lib/auth";
 import { z } from "zod";
 import { createNotification } from "@/lib/notifications";
+import { getServerT } from "@/lib/i18n/server";
 
 const createSchema = z.object({
   details: z.string().min(10, "يرجى كتابة تفاصيل كافية"),
@@ -16,6 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireAuth();
     const { id: requestId } = await params;
 
@@ -26,15 +28,15 @@ export async function POST(
     });
 
     if (!request || request.userId !== user.id) {
-      return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+      return NextResponse.json({ error: t("api.requestNotFound") }, { status: 404 });
     }
 
     if (request.status !== "COMPLETED") {
-      return NextResponse.json({ error: "الطلب لم يكتمل بعد" }, { status: 400 });
+      return NextResponse.json({ error: t("api.requestNotComplete") }, { status: 400 });
     }
 
     if (request.packageName !== "LEGAL" && request.packageName !== "FULL") {
-      return NextResponse.json({ error: "المتابعة القانونية متاحة فقط لباقات المراجعة القانونية والأمان الشامل" }, { status: 400 });
+      return NextResponse.json({ error: t("api.continuationOnlyLegal") }, { status: 400 });
     }
 
     // Check for existing pending continuation
@@ -43,7 +45,7 @@ export async function POST(
     });
 
     if (existing) {
-      return NextResponse.json({ error: "يوجد طلب متابعة قيد المعالجة بالفعل" }, { status: 400 });
+      return NextResponse.json({ error: t("api.continuationExists") }, { status: 400 });
     }
 
     const body = await req.json();
@@ -51,7 +53,7 @@ export async function POST(
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message || "بيانات غير صالحة" },
+        { error: parsed.error.issues[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -77,7 +79,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ data: continuation, message: "تم إرسال طلب المتابعة بنجاح" }, { status: 201 });
+    return NextResponse.json({ data: continuation, message: t("api.continuationSent") }, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }
@@ -89,6 +91,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireAuth();
     const { id: requestId } = await params;
 
@@ -98,12 +101,12 @@ export async function GET(
     });
 
     if (!request) {
-      return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+      return NextResponse.json({ error: t("api.requestNotFound") }, { status: 404 });
     }
 
     // Only the request owner or admin can see continuations
     if (request.userId !== user.id && user.role !== "ADMIN") {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+      return NextResponse.json({ error: t("api.unauthorized") }, { status: 403 });
     }
 
     const continuations = await prisma.continuationRequest.findMany({

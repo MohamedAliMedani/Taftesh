@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { getServerT } from "@/lib/i18n/server";
 
 const contactSchema = z.object({
     name: z.string().min(2, "الاسم قصير جداً"),
@@ -11,6 +12,7 @@ const contactSchema = z.object({
 
 export async function POST(req: Request) {
     try {
+        const t = await getServerT();
         const body = await req.json();
         const validatedData = contactSchema.safeParse(body);
 
@@ -29,10 +31,11 @@ export async function POST(req: Request) {
             },
         });
 
-        return NextResponse.json({ message: "تم إرسال رسالتك بنجاح" }, { status: 201 });
+        return NextResponse.json({ message: t("api.contactSuccess") }, { status: 201 });
     } catch (error) {
         console.error("Contact form error:", error);
-        return NextResponse.json({ error: "حدث خطأ أثناء إرسال الرسالة" }, { status: 500 });
+        const t = await getServerT();
+        return NextResponse.json({ error: t("api.contactError") }, { status: 500 });
     }
 }
 

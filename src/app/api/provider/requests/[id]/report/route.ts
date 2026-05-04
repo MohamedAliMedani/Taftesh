@@ -3,6 +3,7 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { requireRole, AuthError, handleApiError } from "@/lib/auth";
 import { notifyReportReady } from "@/lib/notifications";
+import { getServerT } from "@/lib/i18n/server";
 
 const createReportSchema = z.object({
   type: z.enum(["LEGAL", "TECHNICAL"], {
@@ -20,6 +21,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireRole("EXPERT");
     const { id: requestId } = await params;
 
@@ -28,7 +30,7 @@ export async function POST(
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message || "بيانات غير صالحة" },
+        { error: parsed.error.issues[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -40,11 +42,11 @@ export async function POST(
     });
 
     if (!inspectionRequest) {
-      throw new AuthError("الطلب غير موجود", 404);
+      throw new AuthError(t("api.requestNotFound"), 404);
     }
 
     if (inspectionRequest.providerId !== user.id) {
-      throw new AuthError("ليس لديك صلاحية لإضافة تقرير لهذا الطلب", 403);
+      throw new AuthError(t("api.noPermission"), 403);
     }
 
     const report = await prisma.report.create({
@@ -62,7 +64,7 @@ export async function POST(
     await notifyReportReady(inspectionRequest.userId, requestId);
 
     return NextResponse.json(
-      { data: report, message: "تم إنشاء التقرير بنجاح" },
+      { data: report, message: t("api.reportCreated") },
       { status: 201 }
     );
   } catch (error) {

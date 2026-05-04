@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { UserCheck, Star, ClipboardList, Phone, Filter, CheckCircle2, Search, Banknote, CreditCard } from "lucide-react";
 import { SPECIALTY_LABELS } from "@/lib/types";
 import Dropdown from "@/components/ui/Dropdown";
+import { useT } from "@/lib/i18n";
 
 export default function AdminProvidersPage() {
+  const t = useT();
   const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [specialtyFilter, setSpecialtyFilter] = useState("");
@@ -35,11 +37,11 @@ export default function AdminProvidersPage() {
         body: JSON.stringify({ userId, verified: true }),
       });
       if (res.ok) {
-        setMessage("تم اعتماد الخبير بنجاح");
+        setMessage(t("admin.providers.approved"));
         fetchProviders();
       }
     } catch {
-      setMessage("حدث خطأ");
+      setMessage(t("common.error"));
     }
     setTimeout(() => setMessage(""), 2000);
   };
@@ -47,8 +49,8 @@ export default function AdminProvidersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold outfit">مقدمي الخدمات</h1>
-        <p className="text-muted-foreground mt-1">إدارة المهندسين والمحامين المسجلين</p>
+        <h1 className="text-3xl font-bold outfit">{t("admin.providers.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("admin.providers.subtitle")}</p>
       </div>
 
       {message && (
@@ -61,7 +63,7 @@ export default function AdminProvidersPage() {
           <Search className="w-4 h-4 text-muted-foreground ml-2" />
           <input
             type="text"
-            placeholder="بحث بالاسم..."
+            placeholder={t("admin.providers.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent w-full py-3 text-sm outline-none"
@@ -70,22 +72,22 @@ export default function AdminProvidersPage() {
         <Dropdown
           value={specialtyFilter}
           onChange={setSpecialtyFilter}
-          placeholder="كل التخصصات"
+          placeholder={t("admin.providers.allSpecialties")}
           allowClear
           options={[
-            { value: "ENGINEER", label: "مهندسين" },
-            { value: "LAWYER", label: "محامين" },
+            { value: "ENGINEER", label: t("admin.providers.engineers") },
+            { value: "LAWYER", label: t("admin.providers.lawyers") },
           ]}
           className="min-w-[160px]"
         />
         <Dropdown
           value={verifiedFilter}
           onChange={setVerifiedFilter}
-          placeholder="الكل"
+          placeholder={t("admin.providers.all")}
           allowClear
           options={[
-            { value: "true", label: "معتمدين" },
-            { value: "false", label: "غير معتمدين" },
+            { value: "true", label: t("admin.providers.verifiedFilter") },
+            { value: "false", label: t("admin.providers.notVerifiedFilter") },
           ]}
           className="min-w-[160px]"
         />
@@ -100,7 +102,7 @@ export default function AdminProvidersPage() {
       ) : providers.length === 0 ? (
         <div className="glass-card p-16 text-center rounded-3xl">
           <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-          <p className="text-muted-foreground">لا يوجد مقدمي خدمات</p>
+          <p className="text-muted-foreground">{t("admin.providers.noProviders")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -135,7 +137,7 @@ export default function AdminProvidersPage() {
                 <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
                   provider.verified ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"
                 }`}>
-                  {provider.verified ? "معتمد" : "غير معتمد"}
+                  {provider.verified ? t("admin.users.verified") : t("admin.users.notVerified")}
                 </span>
               </div>
 
@@ -151,7 +153,7 @@ export default function AdminProvidersPage() {
                 )}
                 {provider.experienceYears != null && (
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-white/5 rounded-lg">
-                    {provider.experienceYears} سنة خبرة
+                    {provider.experienceYears} {t("admin.providers.yearsExperience")}
                   </div>
                 )}
               </div>
@@ -159,14 +161,14 @@ export default function AdminProvidersPage() {
               <div className="flex flex-wrap gap-3 mb-3">
                 {provider.nationalIdImage && (
                   <a href={provider.nationalIdImage} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                    <img src={provider.nationalIdImage} alt="البطاقة" className="w-16 h-10 object-cover rounded-lg border border-white/10" />
-                    <span>البطاقة</span>
+                    <img src={provider.nationalIdImage} alt={t("admin.providers.idCard")} className="w-16 h-10 object-cover rounded-lg border border-white/10" />
+                    <span>{t("admin.providers.idCard")}</span>
                   </a>
                 )}
                 {provider.syndicateCardImage && (
                   <a href={provider.syndicateCardImage} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-purple-400 hover:text-purple-300 transition-colors">
-                    <img src={provider.syndicateCardImage} alt="كارت النقابة" className="w-16 h-10 object-cover rounded-lg border border-white/10" />
-                    <span>كارت النقابة</span>
+                    <img src={provider.syndicateCardImage} alt={t("admin.providers.syndicateCard")} className="w-16 h-10 object-cover rounded-lg border border-white/10" />
+                    <span>{t("admin.providers.syndicateCard")}</span>
                   </a>
                 )}
               </div>
@@ -174,7 +176,7 @@ export default function AdminProvidersPage() {
               {provider.serviceRate != null && (
                 <div className="flex items-center gap-1 text-xs text-amber-400 mb-3">
                   <Banknote className="w-3.5 h-3.5" />
-                  سعر الخدمة: {provider.serviceRate.toLocaleString()} ج.م
+                  {t("admin.providers.servicePrice")} {provider.serviceRate.toLocaleString()} {t("common.currency")}
                 </div>
               )}
 
@@ -186,7 +188,7 @@ export default function AdminProvidersPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <ClipboardList className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{provider.completedRequests || 0} مكتمل</span>
+                    <span className="text-sm">{provider.completedRequests || 0} {t("admin.providers.completedRequests")}</span>
                   </div>
                 </div>
 
@@ -196,7 +198,7 @@ export default function AdminProvidersPage() {
                     className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 text-green-400 rounded-lg text-xs font-bold hover:bg-green-500/20 transition-colors"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    اعتماد
+                    {t("admin.providers.approve")}
                   </button>
                 )}
               </div>

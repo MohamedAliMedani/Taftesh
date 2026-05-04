@@ -10,6 +10,7 @@ import {
 import { RequestStatusBadge } from "@/components/ui/StatusBadge";
 import { PACKAGE_LABELS } from "@/lib/types";
 import type { RequestStatus, PackageName } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 export default function ProviderRequestDetailPage() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function ProviderRequestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+  const t = useT();
 
   // Report form state
   const [showReportForm, setShowReportForm] = useState(false);
@@ -45,14 +47,14 @@ export default function ProviderRequestDetailPage() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        setMessage({ text: newStatus === "IN_PROGRESS" ? "تم بدء العمل على الطلب" : "تم إكمال الطلب بنجاح", type: "success" });
+        setMessage({ text: newStatus === "IN_PROGRESS" ? t("provider.workStarted") : t("provider.requestCompleted"), type: "success" });
         fetchRequest();
       } else {
         const data = await res.json();
-        setMessage({ text: data.error || "فشل التحديث", type: "error" });
+        setMessage({ text: data.error || t("provider.updateFailed"), type: "error" });
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setUpdating(false);
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -73,7 +75,7 @@ export default function ProviderRequestDetailPage() {
         }),
       });
       if (res.ok) {
-        setMessage({ text: "تم رفع التقرير بنجاح", type: "success" });
+        setMessage({ text: t("provider.reportUploaded"), type: "success" });
         setShowReportForm(false);
         setReportTitle("");
         setReportSummary("");
@@ -81,10 +83,10 @@ export default function ProviderRequestDetailPage() {
         fetchRequest();
       } else {
         const data = await res.json();
-        setMessage({ text: data.error || "فشل رفع التقرير", type: "error" });
+        setMessage({ text: data.error || t("provider.reportFailed"), type: "error" });
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setSubmittingReport(false);
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -103,7 +105,7 @@ export default function ProviderRequestDetailPage() {
     return (
       <div className="glass-card p-16 text-center rounded-3xl">
         <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-        <p className="text-muted-foreground">الطلب غير موجود أو ليس لديك صلاحية الوصول</p>
+        <p className="text-muted-foreground">{t("request.notFound")}</p>
       </div>
     );
   }
@@ -115,7 +117,7 @@ export default function ProviderRequestDetailPage() {
         <button onClick={() => router.push("/provider")} className="text-muted-foreground hover:text-white">
           <ArrowRight className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl font-bold outfit">تفاصيل الطلب</h1>
+        <h1 className="text-2xl font-bold outfit">{t("provider.requestDetails")}</h1>
         <span className="text-sm text-muted-foreground font-mono">#{request.id.slice(-6).toUpperCase()}</span>
       </div>
 
@@ -144,7 +146,7 @@ export default function ProviderRequestDetailPage() {
             <div>
               <div className="font-bold text-lg">{PACKAGE_LABELS[request.packageName as PackageName]}</div>
               <div className="text-xs text-muted-foreground">
-                {request.packagePrice?.toLocaleString()} ج.م
+                {request.packagePrice?.toLocaleString()} {t("common.currency")}
               </div>
             </div>
           </div>
@@ -155,7 +157,7 @@ export default function ProviderRequestDetailPage() {
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-amber-500 mt-0.5" />
             <div>
-              <div className="text-xs text-muted-foreground">عنوان العقار</div>
+              <div className="text-xs text-muted-foreground">{t("provider.propertyAddress")}</div>
               <div className="text-sm font-medium">{request.property?.location}</div>
               {request.property?.area && <div className="text-xs text-muted-foreground">{request.property.area}</div>}
             </div>
@@ -163,14 +165,14 @@ export default function ProviderRequestDetailPage() {
           <div className="flex items-start gap-3">
             <User className="w-5 h-5 text-blue-400 mt-0.5" />
             <div>
-              <div className="text-xs text-muted-foreground">العميل</div>
-              <div className="text-sm font-medium">{request.user?.name || "عميل"}</div>
+              <div className="text-xs text-muted-foreground">{t("provider.client")}</div>
+              <div className="text-sm font-medium">{request.user?.name || t("provider.clientFallback")}</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <Calendar className="w-5 h-5 text-emerald-400 mt-0.5" />
             <div>
-              <div className="text-xs text-muted-foreground">تاريخ الطلب</div>
+              <div className="text-xs text-muted-foreground">{t("request.requestDate")}</div>
               <div className="text-sm">{new Date(request.createdAt).toLocaleDateString("ar-EG", { dateStyle: "long" })}</div>
             </div>
           </div>
@@ -178,7 +180,7 @@ export default function ProviderRequestDetailPage() {
             <div className="flex items-start gap-3">
               <Clock className="w-5 h-5 text-purple-400 mt-0.5" />
               <div>
-                <div className="text-xs text-muted-foreground">موعد الفحص</div>
+                <div className="text-xs text-muted-foreground">{t("request.inspectionDate")}</div>
                 <div className="text-sm font-bold">
                   {new Date(request.scheduledDate).toLocaleString("ar-EG", { dateStyle: "long", timeStyle: "short" })}
                 </div>
@@ -189,7 +191,7 @@ export default function ProviderRequestDetailPage() {
 
         {request.notes && (
           <div className="pt-4 border-t border-white/5">
-            <div className="text-xs text-muted-foreground mb-1">ملاحظات العميل</div>
+            <div className="text-xs text-muted-foreground mb-1">{t("provider.clientNotes")}</div>
             <div className="text-sm bg-white/5 p-3 rounded-xl">{request.notes}</div>
           </div>
         )}
@@ -204,7 +206,7 @@ export default function ProviderRequestDetailPage() {
             className="flex items-center gap-2 px-6 py-3 bg-purple-500/10 text-purple-400 rounded-xl font-bold hover:bg-purple-500/20 transition-colors border border-purple-500/20 disabled:opacity-50"
           >
             <Play className="w-5 h-5" />
-            {updating ? "جاري التحديث..." : "بدء العمل"}
+            {updating ? t("provider.updating") : t("provider.startWork")}
           </button>
         )}
         {request.status === "IN_PROGRESS" && (
@@ -214,7 +216,7 @@ export default function ProviderRequestDetailPage() {
               className="flex items-center gap-2 px-6 py-3 bg-blue-500/10 text-blue-400 rounded-xl font-bold hover:bg-blue-500/20 transition-colors border border-blue-500/20"
             >
               <Upload className="w-5 h-5" />
-              رفع تقرير
+              {t("provider.uploadReport")}
             </button>
             <button
               onClick={() => handleStatusUpdate("COMPLETED")}
@@ -222,7 +224,7 @@ export default function ProviderRequestDetailPage() {
               className="flex items-center gap-2 px-6 py-3 gold-gradient text-black rounded-xl font-bold disabled:opacity-50"
             >
               <CheckCircle2 className="w-5 h-5" />
-              {updating ? "جاري التحديث..." : "إنهاء الطلب"}
+              {updating ? t("provider.updating") : t("provider.completeRequest")}
             </button>
           </>
         )}
@@ -233,7 +235,7 @@ export default function ProviderRequestDetailPage() {
         <div className="space-y-4">
           <h2 className="text-xl font-bold outfit flex items-center gap-2">
             <FileText className="w-5 h-5 text-amber-500" />
-            التقارير المرفوعة
+            {t("provider.uploadedReports")}
           </h2>
           {request.reports.map((report: any) => (
             <div key={report.id} className="glass-card p-5 rounded-2xl border-white/5">
@@ -242,7 +244,7 @@ export default function ProviderRequestDetailPage() {
                   <FileText className="w-4 h-4 text-amber-400" />
                   <span className="font-bold">{report.title}</span>
                   <span className="px-2 py-0.5 bg-white/5 rounded-lg text-[10px] font-bold">
-                    {report.type === "LEGAL" ? "قانوني" : "فني"}
+                    {report.type === "LEGAL" ? t("request.legal") : t("request.technical")}
                   </span>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -266,51 +268,51 @@ export default function ProviderRequestDetailPage() {
           >
             <h2 className="text-xl font-bold outfit mb-6 flex items-center gap-2">
               <Upload className="w-5 h-5 text-amber-500" />
-              رفع تقرير جديد
+              {t("provider.uploadNewReport")}
             </h2>
 
             <form onSubmit={handleSubmitReport} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">نوع التقرير</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("provider.reportType")}</label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value as any)}
                   className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-white text-sm [&>option]:text-black"
                 >
-                  <option value="TECHNICAL">تقرير فني / هندسي</option>
-                  <option value="LEGAL">تقرير قانوني</option>
+                  <option value="TECHNICAL">{t("provider.technicalReport")}</option>
+                  <option value="LEGAL">{t("provider.legalReport")}</option>
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">عنوان التقرير</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("provider.reportTitle")}</label>
                 <input
                   type="text"
                   value={reportTitle}
                   onChange={(e) => setReportTitle(e.target.value)}
-                  placeholder="مثال: تقرير الفحص الهندسي - شقة مدينة نصر"
+                  placeholder={t("provider.reportTitlePlaceholder")}
                   className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">ملخص التقرير</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("provider.reportSummary")}</label>
                 <textarea
                   value={reportSummary}
                   onChange={(e) => setReportSummary(e.target.value)}
-                  placeholder="ملخص سريع للنتائج الرئيسية..."
+                  placeholder={t("provider.reportSummaryPlaceholder")}
                   className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm resize-none h-24"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500/80">تفاصيل التقرير الكاملة</label>
+                <label className="text-xs font-bold text-amber-500/80">{t("provider.reportDetails")}</label>
                 <textarea
                   value={reportContent}
                   onChange={(e) => setReportContent(e.target.value)}
-                  placeholder="التفاصيل الكاملة للفحص، النتائج، التوصيات..."
+                  placeholder={t("provider.reportDetailsPlaceholder")}
                   className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm resize-none h-48"
                   required
                 />
@@ -322,14 +324,14 @@ export default function ProviderRequestDetailPage() {
                   disabled={submittingReport}
                   className="flex-1 gold-gradient text-black py-3 rounded-xl font-bold disabled:opacity-50"
                 >
-                  {submittingReport ? "جاري الرفع..." : "رفع التقرير"}
+                  {submittingReport ? t("provider.uploading") : t("provider.submitReport")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowReportForm(false)}
                   className="px-6 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5"
                 >
-                  إلغاء
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>

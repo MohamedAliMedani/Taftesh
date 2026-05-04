@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 import {
   Users, UserCheck, ClipboardList, DollarSign,
   Clock, CheckCircle2, TrendingUp, ArrowLeft, Scale
@@ -11,6 +12,7 @@ import type { AdminStats } from "@/lib/types";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const t = useT();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,21 +25,21 @@ export default function AdminDashboardPage() {
 
   const statCards = stats
     ? [
-        { label: "إجمالي المستخدمين", value: stats.totalUsers, icon: Users, color: "text-blue-400", bg: "bg-blue-500/10" },
-        { label: "مقدمي الخدمات", value: stats.totalProviders, icon: UserCheck, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-        { label: "إجمالي الطلبات", value: stats.totalRequests, icon: ClipboardList, color: "text-amber-400", bg: "bg-amber-500/10" },
-        { label: "طلبات قيد الانتظار", value: stats.pendingRequests, icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10" },
-        { label: "طلبات مكتملة", value: stats.completedRequests, icon: CheckCircle2, color: "text-green-400", bg: "bg-green-500/10" },
-        { label: "الإيرادات (ج.م)", value: stats.totalRevenue.toLocaleString(), icon: DollarSign, color: "text-amber-400", bg: "bg-amber-500/10" },
-        { label: "طلبات هذا الأسبوع", value: stats.recentRequests, icon: TrendingUp, color: "text-purple-400", bg: "bg-purple-500/10" },
+        { label: t("admin.totalUsers"), value: stats.totalUsers, icon: Users, color: "text-blue-400", bg: "bg-blue-500/10" },
+        { label: t("admin.providers"), value: stats.totalProviders, icon: UserCheck, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+        { label: t("admin.totalRequests"), value: stats.totalRequests, icon: ClipboardList, color: "text-amber-400", bg: "bg-amber-500/10" },
+        { label: t("admin.pendingRequests"), value: stats.pendingRequests, icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10" },
+        { label: t("admin.completedRequests"), value: stats.completedRequests, icon: CheckCircle2, color: "text-green-400", bg: "bg-green-500/10" },
+        { label: t("admin.revenue"), value: stats.totalRevenue.toLocaleString(), icon: DollarSign, color: "text-amber-400", bg: "bg-amber-500/10" },
+        { label: t("admin.weeklyRequests"), value: stats.recentRequests, icon: TrendingUp, color: "text-purple-400", bg: "bg-purple-500/10" },
       ]
     : [];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold outfit">لوحة التحكم</h1>
-        <p className="text-muted-foreground mt-1">نظرة عامة على أداء المنصة</p>
+        <h1 className="text-3xl font-bold outfit">{t("admin.dashboard")}</h1>
+        <p className="text-muted-foreground mt-1">{t("admin.overview")}</p>
       </div>
 
       {loading ? (
@@ -75,8 +77,8 @@ export default function AdminDashboardPage() {
           className="glass-card p-6 rounded-2xl text-right hover:bg-white/5 transition-colors group"
         >
           <ClipboardList className="w-8 h-8 text-amber-400 mb-3" />
-          <h3 className="font-bold text-lg mb-1">إدارة الطلبات</h3>
-          <p className="text-sm text-muted-foreground">عرض وتعيين وإدارة طلبات الفحص</p>
+          <h3 className="font-bold text-lg mb-1">{t("admin.manageRequests")}</h3>
+          <p className="text-sm text-muted-foreground">{t("admin.manageRequestsDesc")}</p>
           <ArrowLeft className="w-5 h-5 text-amber-400 mt-4 group-hover:-translate-x-1 transition-transform" />
         </button>
         <button
@@ -84,8 +86,8 @@ export default function AdminDashboardPage() {
           className="glass-card p-6 rounded-2xl text-right hover:bg-white/5 transition-colors group"
         >
           <UserCheck className="w-8 h-8 text-emerald-400 mb-3" />
-          <h3 className="font-bold text-lg mb-1">مقدمي الخدمات</h3>
-          <p className="text-sm text-muted-foreground">إدارة المهندسين والمحامين</p>
+          <h3 className="font-bold text-lg mb-1">{t("admin.manageProviders")}</h3>
+          <p className="text-sm text-muted-foreground">{t("admin.manageProvidersDesc")}</p>
           <ArrowLeft className="w-5 h-5 text-emerald-400 mt-4 group-hover:-translate-x-1 transition-transform" />
         </button>
         <button
@@ -93,8 +95,8 @@ export default function AdminDashboardPage() {
           className="glass-card p-6 rounded-2xl text-right hover:bg-white/5 transition-colors group"
         >
           <Users className="w-8 h-8 text-blue-400 mb-3" />
-          <h3 className="font-bold text-lg mb-1">المستخدمين</h3>
-          <p className="text-sm text-muted-foreground">إدارة حسابات المستخدمين</p>
+          <h3 className="font-bold text-lg mb-1">{t("admin.manageUsers")}</h3>
+          <p className="text-sm text-muted-foreground">{t("admin.manageUsersDesc")}</p>
           <ArrowLeft className="w-5 h-5 text-blue-400 mt-4 group-hover:-translate-x-1 transition-transform" />
         </button>
         <button
@@ -102,8 +104,8 @@ export default function AdminDashboardPage() {
           className="glass-card p-6 rounded-2xl text-right hover:bg-white/5 transition-colors group"
         >
           <Scale className="w-8 h-8 text-purple-400 mb-3" />
-          <h3 className="font-bold text-lg mb-1">المتابعات القانونية</h3>
-          <p className="text-sm text-muted-foreground">إدارة طلبات المتابعة مع المحامين</p>
+          <h3 className="font-bold text-lg mb-1">{t("admin.legalFollowUps")}</h3>
+          <p className="text-sm text-muted-foreground">{t("admin.legalFollowUpsDesc")}</p>
           <ArrowLeft className="w-5 h-5 text-purple-400 mt-4 group-hover:-translate-x-1 transition-transform" />
         </button>
       </div>

@@ -14,6 +14,7 @@ import { RequestStatusBadge, PaymentStatusBadge } from "@/components/ui/StatusBa
 import { PACKAGE_LABELS } from "@/lib/types";
 import type { RequestStatus, PaymentStatus, PackageName } from "@/lib/types";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
+import { useT } from "@/lib/i18n";
 
 export default function UserDashboard() {
   const { data: session, status } = useSession();
@@ -21,6 +22,7 @@ export default function UserDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const t = useT();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -33,7 +35,7 @@ export default function UserDashboard() {
           return res.json();
         })
         .then((data) => { setRequests(data); setLoading(false); })
-        .catch(() => { setError("عذراً، فشل تحميل البيانات."); setLoading(false); });
+        .catch(() => { setError(t("dashboard.loadFailed")); setLoading(false); });
     }
   }, [status, router]);
 
@@ -49,8 +51,8 @@ export default function UserDashboard() {
           <div className="flex items-center gap-4">
             <LogoMark size={56} />
             <div>
-              <h1 className="text-3xl font-bold outfit">أهلاً، {session.user?.name || "مستخدم"}</h1>
-              <p className="text-muted-foreground">تتبع طلبات الفحص والتوثيق الخاصة بك</p>
+              <h1 className="text-3xl font-bold outfit">{t("dashboard.hello")} {session.user?.name || t("nav.user")}</h1>
+              <p className="text-muted-foreground">{t("dashboard.trackRequests")}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -59,7 +61,7 @@ export default function UserDashboard() {
               className="glass px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-white/10 transition-all border border-white/5"
             >
               <Home className="w-4 h-4" />
-              الرئيسية
+              {t("dashboard.home")}
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -74,22 +76,22 @@ export default function UserDashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold outfit flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-500" />
-              طلباتي
+              {t("dashboard.myRequests")}
             </h2>
             <button
               onClick={() => router.push("/#pricing")}
               className="gold-gradient text-black px-5 py-2 rounded-xl text-sm font-bold"
             >
-              طلب جديد
+              {t("dashboard.newRequest")}
             </button>
           </div>
 
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex gap-3 text-sm text-amber-200">
             <Shield className="w-5 h-5 flex-shrink-0 text-amber-500" />
             <div>
-              <p className="font-bold mb-1">خصوصية التواصل</p>
+              <p className="font-bold mb-1">{t("dashboard.privacyTitle")}</p>
               <p className="opacity-80">
-                سيقوم فريق {SITE_CONFIG.nameShort} بالتنسيق بينك وبين الخبير لتحديد موعد الزيارة. خصوصيتك محمية بالكامل.
+                {t("dashboard.privacyDesc", { name: SITE_CONFIG.nameShort })}
               </p>
             </div>
           </div>
@@ -108,13 +110,13 @@ export default function UserDashboard() {
           ) : requests.length === 0 ? (
             <div className="glass-card p-20 text-center rounded-[40px] border-white/5">
               <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-6 opacity-20" />
-              <h3 className="text-2xl font-bold mb-2">لا توجد طلبات بعد</h3>
-              <p className="text-muted-foreground mb-8">ابدأ أول طلب فحص لعقارك الآن لتأمين استثمارك.</p>
+              <h3 className="text-2xl font-bold mb-2">{t("dashboard.noRequests")}</h3>
+              <p className="text-muted-foreground mb-8">{t("dashboard.noRequestsDesc")}</p>
               <button
                 onClick={() => router.push("/")}
                 className="gold-gradient text-black px-10 py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform"
               >
-                احجز فحصك الأول
+                {t("dashboard.bookFirst")}
               </button>
             </div>
           ) : (
@@ -144,13 +146,13 @@ export default function UserDashboard() {
                           {req.reports?.length > 0 && (
                             <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-lg text-[10px] font-bold">
                               <FileText className="w-3 h-3" />
-                              {req.reports.length} تقرير
+                              {req.reports.length} {t("dashboard.report")}
                             </span>
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
-                          {req.property?.location || "العنوان غير متوفر"}
+                          {req.property?.location || t("dashboard.addressNotAvailable")}
                         </div>
                         <div className="text-xs text-muted-foreground font-mono">#{req.id.slice(-6).toUpperCase()}</div>
                       </div>
@@ -158,20 +160,20 @@ export default function UserDashboard() {
 
                     <div className="flex flex-wrap gap-4 items-center">
                       <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-muted-foreground">السعر</div>
-                        <div className="text-amber-400 font-bold">{req.packagePrice?.toLocaleString()} ج.م</div>
+                        <div className="text-[10px] text-muted-foreground">{t("dashboard.price")}</div>
+                        <div className="text-amber-400 font-bold">{req.packagePrice?.toLocaleString()} {t("common.currency")}</div>
                       </div>
                       <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-muted-foreground">الدفع</div>
+                        <div className="text-[10px] text-muted-foreground">{t("dashboard.payment")}</div>
                         <PaymentStatusBadge status={req.paymentStatus as PaymentStatus} />
                       </div>
                       <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-muted-foreground">التاريخ</div>
+                        <div className="text-[10px] text-muted-foreground">{t("dashboard.date")}</div>
                         <div className="text-sm">{new Date(req.createdAt).toLocaleDateString("ar-EG")}</div>
                       </div>
                       {req.provider && (
                         <div className="flex flex-col items-end">
-                          <div className="text-[10px] text-muted-foreground">الخبير</div>
+                          <div className="text-[10px] text-muted-foreground">{t("dashboard.expert")}</div>
                           <div className="text-xs font-bold text-emerald-400">{req.provider.name}</div>
                         </div>
                       )}

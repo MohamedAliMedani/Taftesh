@@ -14,6 +14,7 @@ import { PACKAGE_LABELS, STATUS_LABELS, CASE_TYPES, CASE_TYPE_LABELS, CONTINUATI
 import type { RequestStatus, PaymentStatus, PackageName, ContinuationStatus } from "@/lib/types";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 import Dropdown from "@/components/ui/Dropdown";
+import { useT } from "@/lib/i18n";
 
 export default function UserRequestDetailPage() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ export default function UserRequestDetailPage() {
   const { data: session, status: authStatus } = useSession();
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const t = useT();
 
   // Rating
   const [showRating, setShowRating] = useState(false);
@@ -76,15 +78,15 @@ export default function UserRequestDetailPage() {
         body: JSON.stringify({ score: ratingScore, comment: ratingComment || undefined }),
       });
       if (res.ok) {
-        setMessage({ text: "شكراً لتقييمك!", type: "success" });
+        setMessage({ text: t("rating.thanks"), type: "success" });
         setShowRating(false);
         fetchRequest();
       } else {
         const data = await res.json();
-        setMessage({ text: data.error || "فشل إرسال التقييم", type: "error" });
+        setMessage({ text: data.error || t("rating.submitFailed"), type: "error" });
       }
     } catch {
-      setMessage({ text: "حدث خطأ", type: "error" });
+      setMessage({ text: t("common.error"), type: "error" });
     }
     setSubmittingRating(false);
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -98,8 +100,8 @@ export default function UserRequestDetailPage() {
       <div className="min-h-screen bg-[#0a0a0b] text-white flex items-center justify-center p-6">
         <div className="glass-card p-16 text-center rounded-3xl max-w-md">
           <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">الطلب غير موجود</p>
-          <button onClick={() => router.push("/dashboard")} className="text-amber-400 font-bold">العودة للطلبات</button>
+          <p className="text-muted-foreground mb-4">{t("request.notFound")}</p>
+          <button onClick={() => router.push("/dashboard")} className="text-amber-400 font-bold">{t("nav.backToRequests")}</button>
         </div>
       </div>
     );
@@ -110,10 +112,10 @@ export default function UserRequestDetailPage() {
 
   // Progress steps
   const steps = [
-    { key: "PENDING", label: "قيد الانتظار" },
-    { key: "ASSIGNED", label: "تم التعيين" },
-    { key: "IN_PROGRESS", label: "جاري التنفيذ" },
-    { key: "COMPLETED", label: "مكتمل" },
+    { key: "PENDING", label: t("status.pending") },
+    { key: "ASSIGNED", label: t("status.assigned") },
+    { key: "IN_PROGRESS", label: t("status.inProgress") },
+    { key: "COMPLETED", label: t("status.completed") },
   ];
   const currentStepIndex = steps.findIndex((s) => s.key === request.status);
 
@@ -127,7 +129,7 @@ export default function UserRequestDetailPage() {
           className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors text-sm"
         >
           <ArrowRight className="w-4 h-4" />
-          العودة للطلبات
+          {t("nav.backToRequests")}
         </button>
 
         {message.text && (
@@ -158,7 +160,7 @@ export default function UserRequestDetailPage() {
               </div>
             </div>
             <div className="text-left">
-              <div className="text-2xl font-bold text-amber-400">{request.packagePrice?.toLocaleString()} ج.م</div>
+              <div className="text-2xl font-bold text-amber-400">{request.packagePrice?.toLocaleString()} {t("common.currency")}</div>
               <PaymentStatusBadge status={request.paymentStatus as PaymentStatus} />
             </div>
           </div>
@@ -193,14 +195,14 @@ export default function UserRequestDetailPage() {
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-amber-500 mt-0.5" />
               <div>
-                <div className="text-xs text-muted-foreground">عنوان العقار</div>
+                <div className="text-xs text-muted-foreground">{t("request.propertyAddress")}</div>
                 <div className="text-sm font-medium">{request.property?.location}</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="w-5 h-5 text-emerald-400 mt-0.5" />
               <div>
-                <div className="text-xs text-muted-foreground">تاريخ الطلب</div>
+                <div className="text-xs text-muted-foreground">{t("request.requestDate")}</div>
                 <div className="text-sm">{new Date(request.createdAt).toLocaleDateString("ar-EG", { dateStyle: "long" })}</div>
               </div>
             </div>
@@ -208,7 +210,7 @@ export default function UserRequestDetailPage() {
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-purple-400 mt-0.5" />
                 <div>
-                  <div className="text-xs text-muted-foreground">موعد الفحص</div>
+                  <div className="text-xs text-muted-foreground">{t("request.inspectionDate")}</div>
                   <div className="text-sm font-bold">
                     {new Date(request.scheduledDate).toLocaleString("ar-EG", { dateStyle: "long", timeStyle: "short" })}
                   </div>
@@ -219,10 +221,10 @@ export default function UserRequestDetailPage() {
               <div className="flex items-start gap-3">
                 <User className="w-5 h-5 text-blue-400 mt-0.5" />
                 <div>
-                  <div className="text-xs text-muted-foreground">الخبير المعين</div>
+                  <div className="text-xs text-muted-foreground">{t("request.assignedExpert")}</div>
                   <div className="text-sm font-bold">{request.provider.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {request.provider.specialty === "ENGINEER" ? "مهندس" : "محامي"}
+                    {request.provider.specialty === "ENGINEER" ? t("common.engineer") : t("common.lawyer")}
                   </div>
                 </div>
               </div>
@@ -231,7 +233,7 @@ export default function UserRequestDetailPage() {
 
           {request.notes && (
             <div className="pt-4 border-t border-white/5 mt-4">
-              <div className="text-xs text-muted-foreground mb-1">ملاحظاتك</div>
+              <div className="text-xs text-muted-foreground mb-1">{t("request.yourNotes")}</div>
               <div className="text-sm bg-white/5 p-3 rounded-xl">{request.notes}</div>
             </div>
           )}
@@ -242,7 +244,7 @@ export default function UserRequestDetailPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-bold outfit flex items-center gap-2">
               <FileText className="w-5 h-5 text-amber-500" />
-              تقارير الفحص
+              {t("request.reports")}
             </h2>
             {request.reports.map((report: any) => (
               <motion.div
@@ -256,7 +258,7 @@ export default function UserRequestDetailPage() {
                     <FileText className="w-5 h-5 text-amber-400" />
                     <span className="font-bold text-lg">{report.title}</span>
                     <span className="px-2.5 py-0.5 bg-white/5 rounded-lg text-[10px] font-bold">
-                      {report.type === "LEGAL" ? "قانوني" : "فني"}
+                      {report.type === "LEGAL" ? t("request.legal") : t("request.technical")}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
@@ -265,13 +267,13 @@ export default function UserRequestDetailPage() {
                 </div>
                 {report.summary && (
                   <div className="bg-white/5 p-4 rounded-xl mb-3 text-sm leading-relaxed">
-                    <div className="text-xs text-amber-500/60 mb-1 font-bold">الملخص</div>
+                    <div className="text-xs text-amber-500/60 mb-1 font-bold">{t("request.summary")}</div>
                     {report.summary}
                   </div>
                 )}
                 {report.content && (
                   <div className="bg-white/5 p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap">
-                    <div className="text-xs text-amber-500/60 mb-1 font-bold">التفاصيل</div>
+                    <div className="text-xs text-amber-500/60 mb-1 font-bold">{t("request.details")}</div>
                     {report.content}
                   </div>
                 )}
@@ -283,7 +285,7 @@ export default function UserRequestDetailPage() {
                     className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-xl text-sm font-bold hover:bg-amber-500/20 transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    تحميل PDF
+                    {t("request.downloadPdf")}
                   </a>
                 )}
               </motion.div>
@@ -298,15 +300,15 @@ export default function UserRequestDetailPage() {
               <div className="flex items-center gap-3">
                 <Star className="w-6 h-6 text-amber-400" />
                 <div>
-                  <div className="font-bold">قيّم تجربتك</div>
-                  <div className="text-xs text-muted-foreground">ساعدنا في تحسين الخدمة بتقييم الخبير</div>
+                  <div className="font-bold">{t("rating.rateExperience")}</div>
+                  <div className="text-xs text-muted-foreground">{t("rating.helpImprove")}</div>
                 </div>
               </div>
               <button
                 onClick={() => setShowRating(true)}
                 className="gold-gradient text-black px-5 py-2 rounded-xl text-sm font-bold"
               >
-                تقييم الآن
+                {t("rating.rateNow")}
               </button>
             </div>
           </div>
@@ -317,7 +319,7 @@ export default function UserRequestDetailPage() {
           <div className="glass-card p-5 rounded-2xl border-white/5">
             <div className="flex items-center gap-3 mb-2">
               <Star className="w-5 h-5 text-amber-400" />
-              <span className="font-bold">تقييمك</span>
+              <span className="font-bold">{t("rating.yourRating")}</span>
             </div>
             {request.ratings.filter((r: any) => r.raterId === (session?.user as any)?.id).map((r: any) => (
               <div key={r.id}>
@@ -342,8 +344,8 @@ export default function UserRequestDetailPage() {
                   <div className="flex items-center gap-3">
                     <Scale className="w-6 h-6 text-purple-400" />
                     <div>
-                      <div className="font-bold">هل تحتاج متابعة قانونية؟</div>
-                      <div className="text-xs text-muted-foreground">يمكنك طلب متابعة مع محامي لاتخاذ إجراءات قانونية</div>
+                      <div className="font-bold">{t("continuation.needFollowUp")}</div>
+                      <div className="text-xs text-muted-foreground">{t("continuation.followUpDesc")}</div>
                     </div>
                   </div>
                   <button
@@ -356,7 +358,7 @@ export default function UserRequestDetailPage() {
                     }}
                     className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-5 py-2 rounded-xl text-sm font-bold hover:bg-purple-500/20 transition-colors"
                   >
-                    طلب متابعة
+                    {t("continuation.requestFollowUp")}
                   </button>
                 </div>
               </motion.div>
@@ -370,25 +372,25 @@ export default function UserRequestDetailPage() {
               >
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <Scale className="w-5 h-5 text-purple-400" />
-                  طلب متابعة قانونية
+                  {t("continuation.legalFollowUp")}
                 </h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-amber-500/80">نوع القضية *</label>
+                    <label className="text-xs font-bold text-amber-500/80">{t("continuation.caseType")} *</label>
                     <Dropdown
                       value={contCaseType}
                       onChange={setContCaseType}
-                      placeholder="اختر نوع القضية"
+                      placeholder={t("continuation.chooseCaseType")}
                       options={CASE_TYPES.map((ct) => ({ value: ct.value, label: ct.label }))}
                     />
                   </div>
                   {availableLawyers.length > 0 && (
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-amber-500/80">اختر محامي (اختياري)</label>
+                      <label className="text-xs font-bold text-amber-500/80">{t("continuation.chooseLawyer")}</label>
                       <Dropdown
                         value={contLawyerId}
                         onChange={setContLawyerId}
-                        placeholder="سيتم تعيين محامي من الإدارة"
+                        placeholder={t("continuation.lawyerAssigned")}
                         allowClear
                         options={availableLawyers.map((l) => ({
                           value: l.id,
@@ -398,11 +400,11 @@ export default function UserRequestDetailPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-amber-500/80">تفاصيل الطلب *</label>
+                    <label className="text-xs font-bold text-amber-500/80">{t("continuation.requestDetails")} *</label>
                     <textarea
                       value={contDetails}
                       onChange={(e) => setContDetails(e.target.value)}
-                      placeholder="اكتب تفاصيل ما تحتاجه من إجراءات قانونية..."
+                      placeholder={t("continuation.requestDetailsPlaceholder")}
                       className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm resize-none h-28"
                     />
                   </div>
@@ -418,17 +420,17 @@ export default function UserRequestDetailPage() {
                             body: JSON.stringify({ details: contDetails, caseType: contCaseType, lawyerId: contLawyerId || undefined }),
                           });
                           if (res.ok) {
-                            setMessage({ text: "تم إرسال طلب المتابعة بنجاح", type: "success" });
+                            setMessage({ text: t("continuation.success"), type: "success" });
                             setShowContinuationForm(false);
                             setContDetails("");
                             setContCaseType("");
                             fetchContinuations();
                           } else {
                             const data = await res.json();
-                            setMessage({ text: data.error || "فشل إرسال الطلب", type: "error" });
+                            setMessage({ text: data.error || t("continuation.failed"), type: "error" });
                           }
                         } catch {
-                          setMessage({ text: "حدث خطأ", type: "error" });
+                          setMessage({ text: t("common.error"), type: "error" });
                         }
                         setSubmittingCont(false);
                         setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -436,13 +438,13 @@ export default function UserRequestDetailPage() {
                       disabled={!contCaseType || contDetails.length < 10 || submittingCont}
                       className="flex-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 py-3 rounded-xl font-bold disabled:opacity-50 hover:bg-purple-500/30 transition-colors"
                     >
-                      {submittingCont ? "جاري الإرسال..." : "إرسال الطلب"}
+                      {submittingCont ? t("continuation.sending") : t("continuation.send")}
                     </button>
                     <button
                       onClick={() => setShowContinuationForm(false)}
                       className="px-6 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5"
                     >
-                      إلغاء
+                      {t("common.cancel")}
                     </button>
                   </div>
                 </div>
@@ -459,7 +461,7 @@ export default function UserRequestDetailPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Scale className="w-5 h-5 text-purple-400" />
-                    <span className="font-bold">متابعة قانونية</span>
+                    <span className="font-bold">{t("continuation.title")}</span>
                     <span className="text-xs text-muted-foreground">
                       {CASE_TYPE_LABELS[cont.caseType] || cont.caseType}
                     </span>
@@ -482,8 +484,8 @@ export default function UserRequestDetailPage() {
                     <div className="flex items-center gap-2">
                       <Banknote className="w-5 h-5 text-blue-400" />
                       <div>
-                        <div className="text-sm font-bold">تكلفة المتابعة</div>
-                        <div className="text-xl font-bold text-blue-400">{cont.cost.toLocaleString()} ج.م</div>
+                        <div className="text-sm font-bold">{t("continuation.cost")}</div>
+                        <div className="text-xl font-bold text-blue-400">{cont.cost.toLocaleString()} {t("common.currency")}</div>
                       </div>
                     </div>
                     <button
@@ -496,14 +498,14 @@ export default function UserRequestDetailPage() {
                             body: JSON.stringify({ continuationId: cont.id }),
                           });
                           if (res.ok) {
-                            setMessage({ text: "تم قبول طلب المتابعة", type: "success" });
+                            setMessage({ text: t("continuation.acceptSuccess"), type: "success" });
                             fetchContinuations();
                           } else {
                             const data = await res.json();
-                            setMessage({ text: data.error || "فشل القبول", type: "error" });
+                            setMessage({ text: data.error || t("continuation.acceptFailed"), type: "error" });
                           }
                         } catch {
-                          setMessage({ text: "حدث خطأ", type: "error" });
+                          setMessage({ text: t("common.error"), type: "error" });
                         }
                         setAcceptingCont(false);
                         setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -511,7 +513,7 @@ export default function UserRequestDetailPage() {
                       disabled={acceptingCont}
                       className="gold-gradient text-black px-6 py-2 rounded-xl font-bold disabled:opacity-50"
                     >
-                      {acceptingCont ? "جاري القبول..." : "قبول"}
+                      {acceptingCont ? t("continuation.accepting") : t("continuation.accept")}
                     </button>
                   </div>
                 )}
@@ -519,28 +521,28 @@ export default function UserRequestDetailPage() {
                 {cont.status === "PENDING" && (
                   <div className="text-sm text-amber-400/70 flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    طلبك قيد المراجعة من الإدارة — سيتم تحديد التكلفة قريباً
+                    {t("continuation.underReview")}
                   </div>
                 )}
 
                 {cont.status === "ACCEPTED" && (
                   <div className="text-sm text-green-400/70 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
-                    تم قبول الطلب — سيتم بدء العمل قريباً
+                    {t("continuation.accepted")}
                   </div>
                 )}
 
                 {cont.status === "IN_PROGRESS" && (
                   <div className="text-sm text-purple-400/70 flex items-center gap-2">
                     <Scale className="w-4 h-4" />
-                    المحامي يعمل على قضيتك
+                    {t("continuation.inProgress")}
                   </div>
                 )}
 
                 {cont.status === "COMPLETED" && (
                   <div className="text-sm text-emerald-400/70 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
-                    تم الانتهاء من المتابعة القانونية بنجاح
+                    {t("continuation.completed")}
                   </div>
                 )}
               </motion.div>
@@ -557,7 +559,7 @@ export default function UserRequestDetailPage() {
               className="glass-card p-8 rounded-3xl w-full max-w-md border border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold outfit mb-6 text-center">قيّم الخبير</h2>
+              <h2 className="text-xl font-bold outfit mb-6 text-center">{t("rating.rateExpert")}</h2>
 
               <form onSubmit={handleRate} className="space-y-6">
                 <div className="flex justify-center">
@@ -565,11 +567,11 @@ export default function UserRequestDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-amber-500/80">تعليق (اختياري)</label>
+                  <label className="text-xs font-bold text-amber-500/80">{t("rating.comment")}</label>
                   <textarea
                     value={ratingComment}
                     onChange={(e) => setRatingComment(e.target.value)}
-                    placeholder="شاركنا تجربتك..."
+                    placeholder={t("rating.commentPlaceholder")}
                     className="w-full glass p-3 rounded-xl border border-white/10 bg-transparent text-sm resize-none h-24"
                   />
                 </div>
@@ -580,14 +582,14 @@ export default function UserRequestDetailPage() {
                     disabled={ratingScore === 0 || submittingRating}
                     className="flex-1 gold-gradient text-black py-3 rounded-xl font-bold disabled:opacity-50"
                   >
-                    {submittingRating ? "جاري الإرسال..." : "إرسال التقييم"}
+                    {submittingRating ? t("rating.submitting") : t("rating.submit")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowRating(false)}
                     className="px-6 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5"
                   >
-                    إلغاء
+                    {t("common.cancel")}
                   </button>
                 </div>
               </form>

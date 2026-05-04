@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAuth, handleApiError } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getServerT } from "@/lib/i18n/server";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireAuth();
     const { id } = await params;
 
@@ -36,7 +38,7 @@ export async function GET(
 
     if (!request) {
       return NextResponse.json(
-        { error: "الطلب غير موجود" },
+        { error: t("api.requestNotFound") },
         { status: 404 }
       );
     }
@@ -44,14 +46,14 @@ export async function GET(
     // Access control based on role
     if (user.role === "CLIENT" && request.userId !== user.id) {
       return NextResponse.json(
-        { error: "ليس لديك صلاحية لعرض هذا الطلب" },
+        { error: t("api.noPermission") },
         { status: 403 }
       );
     }
 
     if (user.role === "EXPERT" && request.providerId !== user.id) {
       return NextResponse.json(
-        { error: "ليس لديك صلاحية لعرض هذا الطلب" },
+        { error: t("api.noPermission") },
         { status: 403 }
       );
     }

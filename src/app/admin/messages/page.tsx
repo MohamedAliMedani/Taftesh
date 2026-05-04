@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, User, Mail, Phone, Calendar, CheckCircle2 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export default function AdminMessagesPage() {
+  const t = useT();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

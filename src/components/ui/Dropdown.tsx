@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export interface DropdownOption {
   value: string;
@@ -23,13 +24,15 @@ export default function Dropdown({
   value,
   onChange,
   options,
-  placeholder = "اختر...",
+  placeholder,
   icon,
   className = "",
   allowClear = false,
 }: DropdownProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const resolvedPlaceholder = placeholder || t("dropdown.placeholder");
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -53,7 +56,7 @@ export default function Dropdown({
         <span className="flex items-center gap-2">
           {icon}
           <span className={selectedLabel ? "text-white" : "text-muted-foreground"}>
-            {selectedLabel || placeholder}
+            {selectedLabel || resolvedPlaceholder}
           </span>
         </span>
         <motion.span
@@ -81,9 +84,9 @@ export default function Dropdown({
                     onChange("");
                     setOpen(false);
                   }}
-                  className="w-full text-right px-4 py-2.5 text-sm text-muted-foreground hover:bg-white/5 transition-colors"
+                  className="w-full px-4 py-2.5 text-sm text-muted-foreground hover:bg-white/5 transition-colors"
                 >
-                  مسح الاختيار
+                  {t("dropdown.clear")}
                 </button>
               )}
               {options.map((option) => (
@@ -94,7 +97,7 @@ export default function Dropdown({
                     onChange(option.value);
                     setOpen(false);
                   }}
-                  className={`w-full text-right px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                  className={`w-full px-4 py-2.5 text-sm transition-colors cursor-pointer ${
                     value === option.value
                       ? "bg-amber-500/10 text-amber-400"
                       : "text-white hover:bg-white/5"

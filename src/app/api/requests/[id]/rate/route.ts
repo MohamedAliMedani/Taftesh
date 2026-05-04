@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole, handleApiError } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { getServerT } from "@/lib/i18n/server";
 
 const ratingSchema = z.object({
   score: z
@@ -17,6 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireRole("CLIENT");
     const { id: requestId } = await params;
 
@@ -25,7 +27,7 @@ export async function POST(
 
     if (!validated.success) {
       const errorMessage =
-        validated.error.issues?.[0]?.message || "بيانات غير صالحة";
+        validated.error.issues?.[0]?.message || t("api.invalidData");
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
@@ -38,28 +40,28 @@ export async function POST(
 
     if (!request) {
       return NextResponse.json(
-        { error: "الطلب غير موجود" },
+        { error: t("api.requestNotFound") },
         { status: 404 }
       );
     }
 
     if (request.userId !== user.id) {
       return NextResponse.json(
-        { error: "ليس لديك صلاحية لتقييم هذا الطلب" },
+        { error: t("api.noPermission") },
         { status: 403 }
       );
     }
 
     if (request.status !== "COMPLETED") {
       return NextResponse.json(
-        { error: "لا يمكن التقييم إلا بعد اكتمال الطلب" },
+        { error: t("api.ratingOnlyCompleted") },
         { status: 400 }
       );
     }
 
     if (!request.providerId) {
       return NextResponse.json(
-        { error: "لا يوجد مقدم خدمة معين لهذا الطلب" },
+        { error: t("api.noProviderAssigned") },
         { status: 400 }
       );
     }
@@ -76,7 +78,7 @@ export async function POST(
 
     if (existingRating) {
       return NextResponse.json(
-        { error: "لقد قمت بتقييم هذا الطلب مسبقاً" },
+        { error: t("api.alreadyRated") },
         { status: 409 }
       );
     }
@@ -92,7 +94,7 @@ export async function POST(
     });
 
     return NextResponse.json(
-      { message: "تم التقييم بنجاح", data: rating },
+      { message: t("api.ratingSuccess"), data: rating },
       { status: 201 }
     );
   } catch (error) {

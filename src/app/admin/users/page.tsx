@@ -4,8 +4,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Users, Search, Shield, UserCheck, UserX, Phone, Mail, Calendar, Filter } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
+import { useT } from "@/lib/i18n";
 
 export default function AdminUsersPage() {
+  const t = useT();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -38,26 +40,26 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ userId, ...updates }),
       });
       if (res.ok) {
-        setMessage("تم التحديث بنجاح");
+        setMessage(t("admin.users.updated"));
         fetchUsers();
       }
     } catch {
-      setMessage("حدث خطأ");
+      setMessage(t("common.error"));
     }
     setTimeout(() => setMessage(""), 2000);
   };
 
   const roleLabels: Record<string, string> = {
-    CLIENT: "عميل",
-    EXPERT: "خبير",
-    ADMIN: "مدير",
+    CLIENT: t("admin.users.client"),
+    EXPERT: t("admin.users.expert"),
+    ADMIN: t("admin.users.admin"),
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold outfit">إدارة المستخدمين</h1>
-        <p className="text-muted-foreground mt-1">عرض وإدارة حسابات المستخدمين ({total} مستخدم)</p>
+        <h1 className="text-3xl font-bold outfit">{t("admin.users.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("admin.users.subtitle", { total: String(total) })}</p>
       </div>
 
       {message && (
@@ -70,7 +72,7 @@ export default function AdminUsersPage() {
           <Search className="w-4 h-4 text-muted-foreground ml-2" />
           <input
             type="text"
-            placeholder="بحث بالاسم أو رقم الهاتف..."
+            placeholder={t("admin.users.searchPlaceholder")}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="bg-transparent w-full py-3 text-sm outline-none"
@@ -79,13 +81,13 @@ export default function AdminUsersPage() {
         <Dropdown
           value={roleFilter}
           onChange={(v) => { setRoleFilter(v); setPage(1); }}
-          placeholder="كل الأدوار"
+          placeholder={t("admin.users.allRoles")}
           icon={<Filter className="w-4 h-4 text-muted-foreground" />}
           allowClear
           options={[
-            { value: "CLIENT", label: "عملاء" },
-            { value: "EXPERT", label: "خبراء" },
-            { value: "ADMIN", label: "مديرين" },
+            { value: "CLIENT", label: t("admin.users.clients") },
+            { value: "EXPERT", label: t("admin.users.experts") },
+            { value: "ADMIN", label: t("admin.users.admins") },
           ]}
           className="min-w-[160px]"
         />
@@ -104,12 +106,12 @@ export default function AdminUsersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">المستخدم</th>
-                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">التواصل</th>
-                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">الدور</th>
-                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">الحالة</th>
-                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">التاريخ</th>
-                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">إجراءات</th>
+                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">{t("admin.users.user")}</th>
+                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">{t("admin.users.contact")}</th>
+                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">{t("admin.users.role")}</th>
+                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">{t("admin.users.status")}</th>
+                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">{t("admin.users.date")}</th>
+                  <th className="text-right p-4 text-xs text-muted-foreground font-medium">{t("admin.users.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -126,7 +128,7 @@ export default function AdminUsersPage() {
                           <Users className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
-                          <div className="font-medium">{user.name || "بدون اسم"}</div>
+                          <div className="font-medium">{user.name || t("admin.users.noName")}</div>
                           <div className="text-xs text-muted-foreground font-mono">#{user.id.slice(-6)}</div>
                         </div>
                       </div>
@@ -152,7 +154,7 @@ export default function AdminUsersPage() {
                         "bg-blue-500/10 text-blue-400"
                       }`}>
                         {roleLabels[user.role] || user.role}
-                        {user.specialty && ` - ${user.specialty === "ENGINEER" ? "مهندس" : "محامي"}`}
+                        {user.specialty && ` - ${user.specialty === "ENGINEER" ? t("common.engineer") : t("common.lawyer")}`}
                       </span>
                     </td>
                     <td className="p-4">
@@ -161,13 +163,13 @@ export default function AdminUsersPage() {
                           <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
                             user.verified ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"
                           }`}>
-                            {user.verified ? "معتمد" : "غير معتمد"}
+                            {user.verified ? t("admin.users.verified") : t("admin.users.notVerified")}
                           </span>
                         )}
                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
                           user.active !== false ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
                         }`}>
-                          {user.active !== false ? "نشط" : "معطل"}
+                          {user.active !== false ? t("admin.users.active") : t("admin.users.disabled")}
                         </span>
                       </div>
                     </td>
@@ -183,7 +185,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => handleUpdate(user.id, { verified: true })}
                             className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
-                            title="اعتماد"
+                            title={t("admin.providers.approve")}
                           >
                             <UserCheck className="w-4 h-4" />
                           </button>
@@ -196,7 +198,7 @@ export default function AdminUsersPage() {
                                 ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
                                 : "bg-green-500/10 text-green-400 hover:bg-green-500/20"
                             }`}
-                            title={user.active !== false ? "تعطيل" : "تفعيل"}
+                            title={user.active !== false ? t("admin.users.disabled") : t("admin.users.active")}
                           >
                             {user.active !== false ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                           </button>
@@ -217,17 +219,17 @@ export default function AdminUsersPage() {
                 disabled={page === 1}
                 className="px-3 py-1 rounded-lg text-sm glass disabled:opacity-30"
               >
-                السابق
+                {t("admin.users.previous")}
               </button>
               <span className="text-sm text-muted-foreground">
-                صفحة {page} من {Math.ceil(total / 20)}
+                {t("admin.users.pageOf", { page: String(page), total: String(Math.ceil(total / 20)) })}
               </span>
               <button
                 onClick={() => setPage(page + 1)}
                 disabled={page * 20 >= total}
                 className="px-3 py-1 rounded-lg text-sm glass disabled:opacity-30"
               >
-                التالي
+                {t("admin.users.next")}
               </button>
             </div>
           )}

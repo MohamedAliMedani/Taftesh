@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth, handleApiError } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { getServerT } from "@/lib/i18n/server";
 
 // POST — Client accepts a priced continuation
 export async function POST(
@@ -9,13 +10,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const t = await getServerT();
     const user = await requireAuth();
     const { id: requestId } = await params;
     const body = await req.json();
     const { continuationId } = body;
 
     if (!continuationId) {
-      return NextResponse.json({ error: "معرف طلب المتابعة مطلوب" }, { status: 400 });
+      return NextResponse.json({ error: t("api.continuationIdRequired") }, { status: 400 });
     }
 
     // Validate the continuation
@@ -29,11 +31,11 @@ export async function POST(
     });
 
     if (!continuation || continuation.request.userId !== user.id) {
-      return NextResponse.json({ error: "طلب المتابعة غير موجود" }, { status: 404 });
+      return NextResponse.json({ error: t("api.continuationNotFound") }, { status: 404 });
     }
 
     if (continuation.status !== "PRICED") {
-      return NextResponse.json({ error: "لا يمكن قبول هذا الطلب في حالته الحالية" }, { status: 400 });
+      return NextResponse.json({ error: t("api.cannotAcceptState") }, { status: 400 });
     }
 
     const updated = await prisma.continuationRequest.update({
@@ -47,7 +49,7 @@ export async function POST(
       await createNotification({
         userId: admin.id,
         title: "تم قبول طلب المتابعة",
-        message: `��لعميل ${user.name} قبل تكلفة المتابعة القانونية (${continuation.cost} ج.م)`,
+        message: `العميل ${user.name} قبل تكلفة المتابعة القانونية (${continuation.cost} ج.م)`,
         type: "PAYMENT",
         link: "/admin/continuations",
       });
@@ -62,7 +64,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ data: updated, message: "تم قبول طلب المتابعة" });
+    return NextResponse.json({ data: updated, message: t("api.continuationAccepted") });
   } catch (error) {
     return handleApiError(error);
   }

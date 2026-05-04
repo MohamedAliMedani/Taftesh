@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { requireRole, AuthError, handleApiError } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n/server";
 
 const updateProfileSchema = z.object({
   name: z.string().min(1, "الاسم مطلوب").optional(),
@@ -13,6 +14,7 @@ const updateProfileSchema = z.object({
 
 export async function GET() {
   try {
+    const t = await getServerT();
     const sessionUser = await requireRole("EXPERT");
 
     const user = await prisma.user.findUnique({
@@ -32,7 +34,7 @@ export async function GET() {
     });
 
     if (!user) {
-      throw new AuthError("المستخدم غير موجود", 404);
+      throw new AuthError(t("api.userNotFound"), 404);
     }
 
     const ratingsAgg = await prisma.rating.aggregate({
@@ -53,6 +55,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    const t = await getServerT();
     const sessionUser = await requireRole("EXPERT");
 
     const body = await request.json();
@@ -60,7 +63,7 @@ export async function PATCH(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message || "بيانات غير صالحة" },
+        { error: parsed.error.issues[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -73,7 +76,7 @@ export async function PATCH(request: Request) {
       });
       if (existing && existing.id !== sessionUser.id) {
         return NextResponse.json(
-          { error: "البريد الإلكتروني مستخدم بالفعل" },
+          { error: t("api.emailInUse") },
           { status: 409 }
         );
       }
@@ -102,7 +105,7 @@ export async function PATCH(request: Request) {
       },
     });
 
-    return NextResponse.json({ data: updated, message: "تم تحديث الملف الشخصي بنجاح" });
+    return NextResponse.json({ data: updated, message: t("api.profileUpdated") });
   } catch (error) {
     return handleApiError(error);
   }

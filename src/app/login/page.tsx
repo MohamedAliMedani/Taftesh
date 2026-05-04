@@ -7,6 +7,7 @@ import { Lock, Phone, AlertCircle, Chrome, Facebook } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import { SITE_CONFIG } from "@/lib/config";
 import { motion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 
 export default function LoginPage() {
   const [phone, setPhone] = useState("");
@@ -16,13 +17,14 @@ export default function LoginPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const router = useRouter();
   const { update } = useSession();
+  const t = useT();
 
   const touch = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
 
   const phoneRegex = /^01[0-9]{9}$/;
   const errors = {
-    phone: !phone.trim() ? "رقم الهاتف مطلوب" : !phoneRegex.test(phone) ? "رقم الهاتف يجب أن يبدأ بـ 01 ويكون 11 رقم" : "",
-    password: !password ? "كلمة المرور مطلوبة" : password.length < 6 ? "كلمة المرور يجب أن تكون 6 أحرف على الأقل" : "",
+    phone: !phone.trim() ? t("validation.phoneRequired") : !phoneRegex.test(phone) ? t("validation.phoneFormat") : "",
+    password: !password ? t("validation.passwordRequired") : password.length < 6 ? t("validation.passwordMin") : "",
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +45,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("رقم الهاتف أو كلمة المرور غير صحيحة");
+      setError(t("login.invalidCredentials"));
       setLoading(false);
     } else {
       const session = await update();
@@ -71,13 +73,13 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 md:mb-6 w-fit">
             <LogoMark size={56} />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold outfit mb-2">تسجيل الدخول</h1>
-          <p className="text-muted-foreground text-xs md:text-sm font-medium">مرحباً بك مجدداً في {SITE_CONFIG.name}</p>
+          <h1 className="text-2xl md:text-3xl font-bold outfit mb-2">{t("login.title")}</h1>
+          <p className="text-muted-foreground text-xs md:text-sm font-medium">{t("login.welcome")} {SITE_CONFIG.name}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-amber-500/80 mr-2">رقم الهاتف</label>
+            <label className="text-xs font-bold text-amber-500/80 mr-2">{t("login.phone")}</label>
             <div className={`glass flex items-center px-4 py-3.5 md:py-4 rounded-2xl focus-within:ring-2 transition-all border ${touched.phone && errors.phone ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
               <Phone className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
               <input
@@ -95,7 +97,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-amber-500/80 mr-2">كلمة المرور</label>
+            <label className="text-xs font-bold text-amber-500/80 mr-2">{t("login.password")}</label>
             <div className={`glass flex items-center px-4 py-3.5 md:py-4 rounded-2xl focus-within:ring-2 transition-all border ${touched.password && errors.password ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
               <Lock className="w-5 h-5 text-muted-foreground ml-3 flex-shrink-0" />
               <input
@@ -128,12 +130,12 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full gold-gradient text-black py-3.5 md:py-4 rounded-2xl font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-xl shadow-amber-500/10 disabled:opacity-70"
           >
-            {loading ? "جاري التحقق..." : "تسجيل الدخول"}
+            {loading ? t("login.verifying") : t("login.submit")}
           </button>
 
           <div className="relative flex items-center py-2">
             <div className="flex-grow border-t border-white/10"></div>
-            <span className="flex-shrink-0 mx-4 text-xs text-muted-foreground">أو الدخول بواسطة</span>
+            <span className="flex-shrink-0 mx-4 text-xs text-muted-foreground">{t("login.orLoginVia")}</span>
             <div className="flex-grow border-t border-white/10"></div>
           </div>
 
@@ -158,10 +160,10 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-6 md:mt-8 text-center text-sm">
-          <span className="text-muted-foreground">ليس لديك حساب؟ </span>
-          <a href="/register" className="text-amber-400 font-bold hover:underline">إنشاء حساب جديد</a>
+          <span className="text-muted-foreground">{t("login.noAccount")} </span>
+          <a href="/register" className="text-amber-400 font-bold hover:underline">{t("login.createAccount")}</a>
           <div className="mt-4">
-            <a href="/" className="text-xs text-muted-foreground hover:text-amber-400 transition-colors">العودة للرئيسية</a>
+            <a href="/" className="text-xs text-muted-foreground hover:text-amber-400 transition-colors">{t("nav.backToHome")}</a>
           </div>
         </div>
       </motion.div>

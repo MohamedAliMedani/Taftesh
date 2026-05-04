@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireRole, handleApiError } from "@/lib/auth";
 import { notifyRequestAssigned, notifyStatusUpdate } from "@/lib/notifications";
 import { z } from "zod";
+import { getServerT } from "@/lib/i18n/server";
 
 // GET /api/admin/requests — List all inspection requests with full details
 export async function GET(request: Request) {
@@ -80,6 +81,7 @@ const updateRequestSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
+    const t = await getServerT();
     await requireRole("ADMIN");
 
     const body = await request.json();
@@ -87,7 +89,7 @@ export async function PATCH(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues?.[0]?.message || "بيانات غير صالحة" },
+        { error: parsed.error.issues?.[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -100,7 +102,7 @@ export async function PATCH(request: Request) {
     });
 
     if (!existingRequest) {
-      return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+      return NextResponse.json({ error: t("api.requestNotFound") }, { status: 404 });
     }
 
     const updateData: Record<string, unknown> = {};
@@ -113,19 +115,19 @@ export async function PATCH(request: Request) {
       });
 
       if (!provider) {
-        return NextResponse.json({ error: "مقدم الخدمة غير موجود" }, { status: 404 });
+        return NextResponse.json({ error: t("api.providerNotFound") }, { status: 404 });
       }
 
       if (provider.role !== "EXPERT") {
-        return NextResponse.json({ error: "المستخدم المحدد ليس خبيراً" }, { status: 400 });
+        return NextResponse.json({ error: t("api.notExpert") }, { status: 400 });
       }
 
       if (!provider.verified) {
-        return NextResponse.json({ error: "مقدم الخدمة غير معتمد بعد" }, { status: 400 });
+        return NextResponse.json({ error: t("api.providerNotVerified") }, { status: 400 });
       }
 
       if (!provider.active) {
-        return NextResponse.json({ error: "مقدم الخدمة غير نشط" }, { status: 400 });
+        return NextResponse.json({ error: t("api.providerInactive") }, { status: 400 });
       }
 
       updateData.providerId = providerId;
@@ -145,7 +147,7 @@ export async function PATCH(request: Request) {
     }
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: "لم يتم تقديم أي بيانات للتحديث" }, { status: 400 });
+      return NextResponse.json({ error: t("api.noUpdateData") }, { status: 400 });
     }
 
     // Set completedAt when status changes to COMPLETED
@@ -170,7 +172,7 @@ export async function PATCH(request: Request) {
       await notifyStatusUpdate(existingRequest.userId, requestId, status);
     }
 
-    return NextResponse.json({ data: updated, message: "تم تحديث الطلب بنجاح" });
+    return NextResponse.json({ data: updated, message: t("api.requestUpdated") });
   } catch (error) {
     return handleApiError(error);
   }

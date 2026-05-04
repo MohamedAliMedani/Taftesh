@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import crypto from "crypto";
+import { getServerT } from "@/lib/i18n/server";
 
 const baseSchema = z.object({
   name: z.string().min(2, "الاسم يجب أن يكون أكثر من حرفين"),
@@ -23,12 +24,13 @@ const baseSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const t = await getServerT();
     const body = await req.json();
     const validatedData = baseSchema.safeParse(body);
 
     if (!validatedData.success) {
       return NextResponse.json(
-        { error: validatedData.error.issues?.[0]?.message || "بيانات الإدخال غير صالحة" },
+        { error: validatedData.error.issues?.[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -41,36 +43,36 @@ export async function POST(req: Request) {
 
     // Confirm password match
     if (password !== confirmPassword) {
-      return NextResponse.json({ error: "كلمتا المرور غير متطابقتين" }, { status: 400 });
+      return NextResponse.json({ error: t("api.passwordMismatch") }, { status: 400 });
     }
 
     // Expert validations
     if (userType === "EXPERT") {
       if (!specialty) {
-        return NextResponse.json({ error: "الرجاء اختيار التخصص" }, { status: 400 });
+        return NextResponse.json({ error: t("api.selectSpecialty") }, { status: 400 });
       }
       if (!nationalIdImage) {
-        return NextResponse.json({ error: "يرجى رفع صورة البطاقة الشخصية" }, { status: 400 });
+        return NextResponse.json({ error: t("api.uploadNationalId") }, { status: 400 });
       }
       if (!syndicateCardImage) {
-        return NextResponse.json({ error: "يرجى رفع صورة كارت النقابة" }, { status: 400 });
+        return NextResponse.json({ error: t("api.uploadSyndicateCard") }, { status: 400 });
       }
       if (!serviceRate || serviceRate <= 0) {
-        return NextResponse.json({ error: "يرجى تحديد سعر الخدمة" }, { status: 400 });
+        return NextResponse.json({ error: t("api.setServiceRate") }, { status: 400 });
       }
     }
 
     // Check existing phone
     const existingPhone = await prisma.user.findUnique({ where: { phone } });
     if (existingPhone) {
-      return NextResponse.json({ error: "رقم الهاتف مسجل بالفعل" }, { status: 400 });
+      return NextResponse.json({ error: t("api.phoneRegistered") }, { status: 400 });
     }
 
     // Check existing email
     if (email) {
       const existingEmail = await prisma.user.findUnique({ where: { email } });
       if (existingEmail) {
-        return NextResponse.json({ error: "البريد الإلكتروني مسجل بالفعل" }, { status: 400 });
+        return NextResponse.json({ error: t("api.emailRegistered") }, { status: 400 });
       }
     }
 
@@ -114,14 +116,15 @@ export async function POST(req: Request) {
     }
 
     const message = userType === "EXPERT"
-      ? "تم إنشاء حسابك بنجاح. سيتم مراجعة بياناتك من الإدارة للاعتماد."
+      ? t("api.accountCreatedExpert")
       : email
-        ? "تم إنشاء الحساب بنجاح. تم إرسال رابط التفعيل لبريدك الإلكتروني."
-        : "تم إنشاء الحساب بنجاح";
+        ? t("api.accountCreatedEmail")
+        : t("api.accountCreated");
 
     return NextResponse.json({ message, userId: user.id }, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);
-    return NextResponse.json({ error: "حدث خطأ أثناء التسجيل" }, { status: 500 });
+    const t = await getServerT();
+    return NextResponse.json({ error: t("api.registrationError") }, { status: 500 });
   }
 }

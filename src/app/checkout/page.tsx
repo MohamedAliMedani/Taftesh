@@ -13,16 +13,19 @@ import { motion } from "framer-motion";
 import { PACKAGES, calculateTotalPrice } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
 import Dropdown from "@/components/ui/Dropdown";
+import { useT } from "@/lib/i18n";
 
 export default function CheckoutPage() {
+  const t = useT();
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-amber-500">جاري التحميل...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-amber-500">{t("checkout.loading")}</div>}>
       <CheckoutContent />
     </Suspense>
   );
 }
 
 function CheckoutContent() {
+  const t = useT();
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,7 +52,7 @@ function CheckoutContent() {
 
   const selectedPkg = PACKAGES[pkgQuery] || PACKAGES.FULL;
 
-  // Calculate total price dynamically from expert rates + 25% platform fee
+  // Calculate total price dynamically from expert rates
   const expertRate = selectedExpert?.serviceRate ?? 0;
   const engineerRate = selectedEngineer?.serviceRate ?? 0;
   const lawyerRate = selectedLawyer?.serviceRate ?? 0;
@@ -86,21 +89,21 @@ function CheckoutContent() {
   }, [expertId, engineerId, lawyerId, pkgQuery]);
 
   if (status === "loading" || status === "unauthenticated") {
-    return <div className="min-h-screen flex items-center justify-center text-amber-500">جاري التحقق...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-amber-500">{t("checkout.verifying")}</div>;
   }
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const touchField = (f: string) => setTouched((p) => ({ ...p, [f]: true }));
   const fieldErrors = {
-    address: !propertyAddress.trim() ? "عنوان العقار مطلوب" : propertyAddress.trim().length < 10 ? "يرجى كتابة عنوان تفصيلي" : "",
-    date: !selectedDate ? "تاريخ الفحص مطلوب" : "",
-    time: !selectedTime ? "وقت الفحص مطلوب" : "",
+    address: !propertyAddress.trim() ? t("validation.addressRequired") : propertyAddress.trim().length < 10 ? t("validation.addressMin") : "",
+    date: !selectedDate ? t("validation.dateRequired") : "",
+    time: !selectedTime ? t("validation.timeRequired") : "",
   };
 
   const handlePayment = async () => {
     setTouched({ address: true, date: true, time: true });
     if (fieldErrors.address || fieldErrors.date || fieldErrors.time) {
-      setError("يرجى تصحيح الأخطاء المشار إليها");
+      setError(t("checkout.fixErrors"));
       return;
     }
 
@@ -130,7 +133,7 @@ function CheckoutContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "حدث خطأ");
+        setError(data.error || t("checkout.error"));
         setLoading(false);
         return;
       }
@@ -174,15 +177,15 @@ function CheckoutContent() {
           if (typeof window !== "undefined" && (window as any).fawaterkCheckout) {
             (window as any).fawaterkCheckout(pluginConfig);
           } else {
-            setError("تأخر تحميل بوابة الدفع. تفقد اتصالك.");
+            setError(t("checkout.paymentGatewayError"));
             setPaymentReady(false);
           }
         }, 500);
       } else {
-        setError(data.error || "حدث خطأ أثناء إعداد الدفع");
+        setError(data.error || t("checkout.paymentSetupError"));
       }
     } catch {
-      setError("حدث خطأ في الاتصال بالخادم");
+      setError(t("checkout.serverError"));
     } finally {
       setLoading(false);
     }
@@ -200,14 +203,14 @@ function CheckoutContent() {
           <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-12 h-12 text-green-500" />
           </div>
-          <h1 className="text-3xl font-bold outfit mb-4">تم تسجيل طلبك بنجاح!</h1>
-          <p className="text-muted-foreground mb-2">تم اختيار الدفع النقدي. سيتواصل فريقنا معك قريباً لتأكيد الموعد.</p>
-          <p className="text-sm text-amber-400 mb-8">يتم الدفع عند زيارة الخبير للعقار.</p>
+          <h1 className="text-3xl font-bold outfit mb-4">{t("checkout.successTitle")}</h1>
+          <p className="text-muted-foreground mb-2">{t("checkout.successCash")}</p>
+          <p className="text-sm text-amber-400 mb-8">{t("checkout.successCashNote")}</p>
           <button
             onClick={() => router.push("/dashboard")}
             className="gold-gradient text-black px-10 py-4 rounded-2xl font-bold hover:brightness-110"
           >
-            تتبع طلبك
+            {t("checkout.trackOrder")}
           </button>
         </motion.div>
       </div>
@@ -229,23 +232,23 @@ function CheckoutContent() {
           <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-6">
             <LogoMark size={48} />
             <div>
-              <h2 className="text-xl font-bold outfit">ملخص الطلب</h2>
-              <p className="text-sm text-muted-foreground">راجع تفاصيل باقتك</p>
+              <h2 className="text-xl font-bold outfit">{t("checkout.orderSummary")}</h2>
+              <p className="text-sm text-muted-foreground">{t("checkout.reviewPackage")}</p>
             </div>
           </div>
 
           <div className="space-y-4 mb-6">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">الباقة:</span>
+              <span className="text-muted-foreground">{t("checkout.package")}</span>
               <span className="font-bold">{selectedPkg.nameAr}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">الوصف:</span>
+              <span className="text-muted-foreground">{t("checkout.description")}</span>
               <span className="text-end max-w-[200px]">{selectedPkg.desc}</span>
             </div>
             {selectedExpert && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">الخبير:</span>
+                <span className="text-muted-foreground">{t("checkout.expert")}</span>
                 <div className="flex items-center gap-2">
                   {selectedExpert.profileImage ? (
                     <img src={selectedExpert.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -260,7 +263,7 @@ function CheckoutContent() {
             )}
             {selectedEngineer && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">المهندس:</span>
+                <span className="text-muted-foreground">{t("checkout.engineer")}</span>
                 <div className="flex items-center gap-2">
                   {selectedEngineer.profileImage ? (
                     <img src={selectedEngineer.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -275,7 +278,7 @@ function CheckoutContent() {
             )}
             {selectedLawyer && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">المحامي:</span>
+                <span className="text-muted-foreground">{t("checkout.lawyer")}</span>
                 <div className="flex items-center gap-2">
                   {selectedLawyer.profileImage ? (
                     <img src={selectedLawyer.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -289,20 +292,20 @@ function CheckoutContent() {
               </div>
             )}
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">طريقة الدفع:</span>
-              <span className="font-bold">{paymentMethod === "CASH" ? "نقدي" : "أونلاين"}</span>
+              <span className="text-muted-foreground">{t("checkout.paymentMethod")}</span>
+              <span className="font-bold">{paymentMethod === "CASH" ? t("checkout.cash") : t("checkout.online")}</span>
             </div>
           </div>
 
           <div className="border-t border-white/10 pt-6">
             {totalPrice > 0 ? (
               <div className="flex justify-between items-end">
-                <div className="text-sm text-muted-foreground">الإجمالي <span className="text-[10px]">(شامل رسوم المنصة 25%)</span></div>
-                <div className="text-3xl font-bold text-amber-400 italic">{totalPrice.toLocaleString()} ج.م</div>
+                <div className="text-sm text-muted-foreground">{t("checkout.total")}</div>
+                <div className="text-3xl font-bold text-amber-400 italic">{totalPrice.toLocaleString()} {t("checkout.currency")}</div>
               </div>
             ) : (
               <div className="text-sm text-muted-foreground text-center">
-                يتم تحديد السعر بناءً على الخبير المختار
+                {t("checkout.priceDynamic")}
               </div>
             )}
           </div>
@@ -316,20 +319,20 @@ function CheckoutContent() {
         >
           {!paymentReady ? (
             <>
-              <h1 className="text-2xl md:text-3xl font-bold outfit">إتمام الحجز</h1>
-              <p className="text-muted-foreground">أدخل تفاصيل العقار لنتمكن من توجيه الخبير المناسب.</p>
+              <h1 className="text-2xl md:text-3xl font-bold outfit">{t("checkout.title")}</h1>
+              <p className="text-muted-foreground">{t("checkout.subtitle")}</p>
 
               <div className="space-y-5">
                 {/* Property Address */}
                 <div className="space-y-1">
-                  <label className="text-sm font-bold text-white">عنوان العقار بالتفصيل *</label>
+                  <label className="text-sm font-bold text-white">{t("checkout.propertyAddress")} {t("common.required")}</label>
                   <div className={`glass flex items-start px-4 py-3 md:py-4 rounded-2xl focus-within:ring-2 border transition-all ${touched.address && fieldErrors.address ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/50 border-white/5"}`}>
                     <MapPin className="w-5 h-5 text-amber-500 mt-1 ml-3 flex-shrink-0" />
                     <textarea
                       value={propertyAddress}
                       onChange={(e) => setPropertyAddress(e.target.value)}
                       onBlur={() => touchField("address")}
-                      placeholder="مثال: مدينة نصر، شارع عباس العقاد، عمارة 5، الدور الخامس..."
+                      placeholder={t("checkout.propertyAddressPlaceholder")}
                       className="bg-transparent border-none outline-none text-sm w-full min-h-[70px] md:min-h-[80px] resize-none"
                     />
                   </div>
@@ -339,32 +342,32 @@ function CheckoutContent() {
                 {/* Area & Type */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-white">المنطقة</label>
+                    <label className="text-sm font-bold text-white">{t("checkout.area")}</label>
                     <div className="glass flex items-center px-4 py-3 rounded-2xl border border-white/5">
                       <Building className="w-5 h-5 text-amber-500 ml-3" />
                       <input
                         type="text"
                         value={propertyArea}
                         onChange={(e) => setPropertyArea(e.target.value)}
-                        placeholder="مثال: التجمع الخامس"
+                        placeholder={t("checkout.areaPlaceholder")}
                         className="bg-transparent border-none outline-none text-sm w-full"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-white">نوع العقار</label>
+                    <label className="text-sm font-bold text-white">{t("checkout.propertyType")}</label>
                     <Dropdown
                       value={propertyType}
                       onChange={setPropertyType}
-                      placeholder="اختر النوع"
+                      placeholder={t("checkout.chooseType")}
                       icon={<Building className="w-5 h-5 text-amber-500" />}
                       options={[
-                        { value: "شقة", label: "شقة" },
-                        { value: "فيلا", label: "فيلا" },
-                        { value: "مكتب", label: "مكتب" },
-                        { value: "محل تجاري", label: "محل تجاري" },
-                        { value: "أرض", label: "أرض" },
-                        { value: "أخرى", label: "أخرى" },
+                        { value: t("checkout.apartment"), label: t("checkout.apartment") },
+                        { value: t("checkout.villa"), label: t("checkout.villa") },
+                        { value: t("checkout.office"), label: t("checkout.office") },
+                        { value: t("checkout.commercial"), label: t("checkout.commercial") },
+                        { value: t("checkout.land"), label: t("checkout.land") },
+                        { value: t("checkout.other"), label: t("checkout.other") },
                       ]}
                     />
                   </div>
@@ -373,7 +376,7 @@ function CheckoutContent() {
                 {/* Date & Time */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm font-bold text-white">تاريخ الفحص *</label>
+                    <label className="text-sm font-bold text-white">{t("checkout.inspectionDate")} {t("common.required")}</label>
                     <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.date && fieldErrors.date ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
                       <CalendarClock className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
                       <input
@@ -388,7 +391,7 @@ function CheckoutContent() {
                     {touched.date && fieldErrors.date && <p className="text-[11px] text-red-400 mr-2">{fieldErrors.date}</p>}
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-bold text-white">الوقت المناسب *</label>
+                    <label className="text-sm font-bold text-white">{t("checkout.inspectionTime")} {t("common.required")}</label>
                     <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.time && fieldErrors.time ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
                       <Clock className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
                       <input
@@ -405,13 +408,13 @@ function CheckoutContent() {
 
                 {/* Notes */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">ملاحظات إضافية</label>
+                  <label className="text-sm font-bold text-white">{t("checkout.notes")}</label>
                   <div className="glass flex items-start px-4 py-3 rounded-2xl border border-white/5">
                     <StickyNote className="w-5 h-5 text-amber-500 mt-1 ml-3 flex-shrink-0" />
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="أي تفاصيل إضافية تود إبلاغنا بها..."
+                      placeholder={t("checkout.notesPlaceholder")}
                       className="bg-transparent border-none outline-none text-sm w-full min-h-[60px] resize-none"
                     />
                   </div>
@@ -419,7 +422,7 @@ function CheckoutContent() {
 
                 {/* Payment Method */}
                 <div className="space-y-3">
-                  <label className="text-sm font-bold text-white">طريقة الدفع *</label>
+                  <label className="text-sm font-bold text-white">{t("checkout.paymentMethodLabel")} {t("common.required")}</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -431,8 +434,8 @@ function CheckoutContent() {
                       }`}
                     >
                       <CreditCard className={`w-6 h-6 mx-auto mb-2 ${paymentMethod === "ONLINE" ? "text-amber-400" : "text-muted-foreground"}`} />
-                      <div className="text-sm font-bold">دفع أونلاين</div>
-                      <div className="text-[10px] text-muted-foreground">بطاقة / محفظة إلكترونية</div>
+                      <div className="text-sm font-bold">{t("checkout.onlinePayment")}</div>
+                      <div className="text-[10px] text-muted-foreground">{t("checkout.onlinePaymentDesc")}</div>
                     </button>
                     <button
                       type="button"
@@ -444,8 +447,8 @@ function CheckoutContent() {
                       }`}
                     >
                       <Banknote className={`w-6 h-6 mx-auto mb-2 ${paymentMethod === "CASH" ? "text-amber-400" : "text-muted-foreground"}`} />
-                      <div className="text-sm font-bold">دفع نقدي</div>
-                      <div className="text-[10px] text-muted-foreground">عند زيارة الخبير</div>
+                      <div className="text-sm font-bold">{t("checkout.cashPayment")}</div>
+                      <div className="text-[10px] text-muted-foreground">{t("checkout.cashPaymentDesc")}</div>
                     </button>
                   </div>
                 </div>
@@ -467,20 +470,20 @@ function CheckoutContent() {
                   className="w-full gold-gradient text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                 >
                   {paymentMethod === "CASH" ? <Banknote className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
-                  {loading ? "جاري الإعداد..." : paymentMethod === "CASH" ? "تأكيد الطلب" : "المتابعة للدفع"}
+                  {loading ? t("checkout.preparing") : paymentMethod === "CASH" ? t("checkout.confirmOrder") : t("checkout.proceedPayment")}
                 </button>
               </div>
 
               <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/5 p-4 rounded-2xl">
                 <Shield className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                <p>مدفوعاتك محمية ومشفرة بالكامل. لن يتم حفظ بيانات بطاقتك على خوادمنا.</p>
+                <p>{t("checkout.securityNote")}</p>
               </div>
             </>
           ) : (
             <div className="glass-card p-8 rounded-3xl min-h-[400px] flex flex-col items-center justify-center">
               <h2 className="text-xl font-bold outfit mb-6 flex items-center gap-2">
                 <CreditCard className="w-6 h-6 text-amber-500" />
-                اختيار طريقة الدفع
+                {t("checkout.choosePaymentMethod")}
               </h2>
               <div id="fawaterkDivId" className="w-full min-h-[300px]"></div>
             </div>

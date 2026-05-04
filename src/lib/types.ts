@@ -68,13 +68,36 @@ export const CASE_TYPES = [
   { value: "CONTRACT_DISPUTE", label: "نزاع تعاقدي" },
   { value: "REGISTRATION", label: "تسجيل عقاري" },
   { value: "EVICTION", label: "دعوى إخلاء" },
-  { value: "COMPENSATION", label: "تعوي��" },
+  { value: "COMPENSATION", label: "تعويض" },
   { value: "OTHER", label: "أخرى" },
 ] as const;
 
 export const CASE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   CASE_TYPES.map((ct) => [ct.value, ct.label])
 );
+
+// i18n keys for use with t() in components
+export const CASE_TYPE_KEYS: Record<string, string> = {
+  OWNERSHIP_DISPUTE: "caseType.ownershipDispute",
+  CONTRACT_DISPUTE: "caseType.contractDispute",
+  REGISTRATION: "caseType.registration",
+  EVICTION: "caseType.eviction",
+  COMPENSATION: "caseType.compensation",
+  OTHER: "caseType.other",
+};
+
+export const CONTINUATION_STATUS_KEYS: Record<string, string> = {
+  PENDING: "continuationStatus.pending",
+  PRICED: "continuationStatus.priced",
+  ACCEPTED: "continuationStatus.accepted",
+  IN_PROGRESS: "continuationStatus.inProgress",
+  COMPLETED: "continuationStatus.completed",
+};
+
+export const SPECIALTY_KEYS: Record<string, string> = {
+  ENGINEER: "specialty.engineer",
+  LAWYER: "specialty.lawyer",
+};
 
 // ──────────────────────────────────────────────
 // API Response Types

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, handleApiError } from "@/lib/auth";
 import { z } from "zod";
+import { getServerT } from "@/lib/i18n/server";
 
 // GET /api/admin/users — List all users with pagination & filtering
 export async function GET(request: Request) {
@@ -70,6 +71,7 @@ const updateUserSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
+    const t = await getServerT();
     await requireRole("ADMIN");
 
     const body = await request.json();
@@ -77,7 +79,7 @@ export async function PATCH(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues?.[0]?.message || "بيانات غير صالحة" },
+        { error: parsed.error.issues?.[0]?.message || t("api.invalidData") },
         { status: 400 }
       );
     }
@@ -86,7 +88,7 @@ export async function PATCH(request: Request) {
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
+      return NextResponse.json({ error: t("api.userNotFound") }, { status: 404 });
     }
 
     const updateData: Record<string, unknown> = {};
@@ -95,7 +97,7 @@ export async function PATCH(request: Request) {
     if (active !== undefined) updateData.active = active;
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: "لم يتم تقديم أي بيانات للتحديث" }, { status: 400 });
+      return NextResponse.json({ error: t("api.noUpdateData") }, { status: 400 });
     }
 
     const updated = await prisma.user.update({
@@ -114,7 +116,7 @@ export async function PATCH(request: Request) {
       },
     });
 
-    return NextResponse.json({ data: updated, message: "تم تحديث المستخدم بنجاح" });
+    return NextResponse.json({ data: updated, message: t("api.userUpdated") });
   } catch (error) {
     return handleApiError(error);
   }
