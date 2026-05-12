@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Search, FileCheck, CheckCircle2, Phone, ArrowLeft, Zap, Scale } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { PACKAGES, SITE_CONFIG } from "@/lib/config";
+import { SITE_CONFIG } from "@/lib/config";
 import { Logo, LogoMark } from "@/components/ui/Logo";
 import { useT } from "@/lib/i18n";
 import LanguageToggle from "@/components/ui/LanguageToggle";
@@ -168,21 +168,21 @@ export default function LandingPage() {
         <section id="pricing" className="py-24">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold outfit mb-4 text-gradient">{t("pricing.title")}</h2>
+              <h2 className="text-4xl font-bold outfit mb-4 text-gradient leading-normal">{t("pricing.title")}</h2>
               <p className="text-muted-foreground">{t("pricing.subtitle")}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {/* Engineering */}
               <div className="glass-card p-8 rounded-3xl border-white/5 flex flex-col">
-                <h3 className="text-xl font-bold mb-2 outfit">{PACKAGES.TECHNICAL.nameAr}</h3>
+                <h3 className="text-xl font-bold mb-2 outfit">{t("pkg.technical.name")}</h3>
                 <div className="text-3xl font-bold mb-2 text-amber-100 italic">{t("pricing.basedOnExpert")}</div>
                 <div className="text-sm text-amber-500/60 mb-6">{t("pricing.engineerFee")}</div>
                 <ul className="space-y-4 mb-10 flex-1">
-                  {PACKAGES.TECHNICAL.features.map((feat, i) => (
+                  {["pkg.technical.f1","pkg.technical.f2","pkg.technical.f3","pkg.technical.f4"].map((key, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-5 h-5 text-amber-500" />
-                      {feat}
+                      <CheckCircle2 className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                      {t(key)}
                     </li>
                   ))}
                 </ul>
@@ -198,14 +198,14 @@ export default function LandingPage() {
               <div className="glass-card p-1 rounded-3xl border-transparent bg-gradient-to-b from-amber-400 to-amber-700 shadow-2xl shadow-amber-500/20 transform scale-105 z-10 flex flex-col">
                 <div className="bg-[#0a0a0b] p-8 rounded-[22px] h-full flex flex-col">
                   <div className="px-3 py-1 bg-amber-500 text-black text-[10px] font-bold rounded-full w-fit mb-4 uppercase">{t("pricing.absoluteSecurity")}</div>
-                  <h3 className="text-xl font-bold mb-2 outfit text-gradient">{PACKAGES.FULL.nameAr}</h3>
+                  <h3 className="text-xl font-bold mb-2 outfit text-gradient">{t("pkg.full.name")}</h3>
                   <div className="text-4xl font-bold mb-2 text-white italic">{t("pricing.basedOnExperts")}</div>
                   <div className="text-sm text-amber-400 mb-6">{t("pricing.fullFee")}</div>
                   <ul className="space-y-4 mb-10 flex-1">
-                    {PACKAGES.FULL.features.map((feat, i) => (
+                    {["pkg.full.f1","pkg.full.f2","pkg.full.f3","pkg.full.f4","pkg.full.f5"].map((key, i) => (
                       <li key={i} className="flex items-center gap-3 text-sm text-amber-50">
-                        <CheckCircle2 className="w-5 h-5 text-amber-400 font-bold" />
-                        {feat}
+                        <CheckCircle2 className="w-5 h-5 text-amber-400 font-bold flex-shrink-0" />
+                        {t(key)}
                       </li>
                     ))}
                   </ul>
@@ -220,14 +220,14 @@ export default function LandingPage() {
 
               {/* Legal */}
               <div className="glass-card p-8 rounded-3xl border-white/5 flex flex-col">
-                <h3 className="text-xl font-bold mb-2 outfit">{PACKAGES.LEGAL.nameAr}</h3>
+                <h3 className="text-xl font-bold mb-2 outfit">{t("pkg.legal.name")}</h3>
                 <div className="text-3xl font-bold mb-2 text-amber-100 italic">{t("pricing.basedOnExpert")}</div>
                 <div className="text-sm text-amber-500/60 mb-6">{t("pricing.lawyerFee")}</div>
                 <ul className="space-y-4 mb-10 flex-1">
-                  {PACKAGES.LEGAL.features.map((feat, i) => (
+                  {["pkg.legal.f1","pkg.legal.f2","pkg.legal.f3","pkg.legal.f4"].map((key, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-5 h-5 text-amber-500" />
-                      {feat}
+                      <CheckCircle2 className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                      {t(key)}
                     </li>
                   ))}
                 </ul>
@@ -315,10 +315,24 @@ export default function LandingPage() {
 function ContactForm() {
   const [formData, setFormData] = React.useState({ name: "", email: "", phone: "", message: "" });
   const [status, setStatus] = React.useState<"IDLE" | "LOADING" | "SUCCESS" | "ERROR">("IDLE");
+  const [touched, setTouched] = React.useState<Record<string, boolean>>({});
   const t = useT();
+
+  const touch = (f: string) => setTouched((p) => ({ ...p, [f]: true }));
+  const phoneRegex = /^01[0-9]{9}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const errors = {
+    name: !formData.name.trim() ? t("validation.nameRequired") : formData.name.trim().length < 2 ? t("validation.nameMin") : "",
+    phone: !formData.phone.trim() ? t("validation.phoneRequired") : !phoneRegex.test(formData.phone) ? t("validation.phoneFormat") : "",
+    email: !formData.email.trim() ? t("validation.emailRequired") : !emailRegex.test(formData.email) ? t("validation.emailFormat") : "",
+    message: !formData.message.trim() ? t("validation.messageRequired") : formData.message.trim().length < 10 ? t("validation.messageMin") : "",
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ name: true, phone: true, email: true, message: true });
+    if (Object.values(errors).some(e => e)) return;
+
     setStatus("LOADING");
     try {
       const response = await fetch("/api/contact", {
@@ -329,10 +343,11 @@ function ContactForm() {
       if (response.ok) {
         setStatus("SUCCESS");
         setFormData({ name: "", email: "", phone: "", message: "" });
+        setTouched({});
       } else {
         setStatus("ERROR");
       }
-    } catch (err) {
+    } catch {
       setStatus("ERROR");
     }
   };
@@ -352,54 +367,58 @@ function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-amber-500/50 mr-2 border-none">{t("contact.name")}</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.name")} *</label>
           <input
             type="text"
             placeholder={t("contact.namePlaceholder")}
-            required
-            className="w-full glass p-4 rounded-2xl border-white/5 outline-none focus:ring-2 ring-amber-500/20"
+            className={`w-full glass p-3.5 rounded-2xl outline-none focus:ring-2 transition-all border ${touched.name && errors.name ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/20 border-white/5"}`}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onBlur={() => touch("name")}
           />
+          {touched.name && errors.name && <p className="text-[11px] text-red-400 mr-1">{errors.name}</p>}
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.phone")}</label>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.phone")} *</label>
           <input
-            type="text"
+            type="tel"
             placeholder={t("contact.phonePlaceholder")}
-            required
-            className="w-full glass p-4 rounded-2xl border-white/5 outline-none focus:ring-2 ring-amber-500/20"
+            className={`w-full glass p-3.5 rounded-2xl outline-none focus:ring-2 transition-all border ${touched.phone && errors.phone ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/20 border-white/5"}`}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onBlur={() => touch("phone")}
           />
+          {touched.phone && errors.phone && <p className="text-[11px] text-red-400 mr-1">{errors.phone}</p>}
         </div>
       </div>
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.email")}</label>
+      <div className="space-y-1">
+        <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.email")} *</label>
         <input
           type="email"
           placeholder={t("contact.emailPlaceholder")}
-          required
-          className="w-full glass p-4 rounded-2xl border-white/5 outline-none focus:ring-2 ring-amber-500/20"
+          className={`w-full glass p-3.5 rounded-2xl outline-none focus:ring-2 transition-all border ${touched.email && errors.email ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/20 border-white/5"}`}
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onBlur={() => touch("email")}
         />
+        {touched.email && errors.email && <p className="text-[11px] text-red-400 mr-1">{errors.email}</p>}
       </div>
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.details")}</label>
+      <div className="space-y-1">
+        <label className="text-xs font-bold text-amber-500/50 mr-2">{t("contact.details")} *</label>
         <textarea
           placeholder={t("contact.detailsPlaceholder")}
-          required
-          className="w-full glass p-4 rounded-2xl border-white/5 outline-none focus:ring-2 ring-amber-500/20 h-32 resize-none"
+          className={`w-full glass p-3.5 rounded-2xl outline-none focus:ring-2 h-32 resize-none transition-all border ${touched.message && errors.message ? "ring-red-500/50 border-red-500/20" : "ring-amber-500/20 border-white/5"}`}
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          onBlur={() => touch("message")}
         />
+        {touched.message && errors.message && <p className="text-[11px] text-red-400 mr-1">{errors.message}</p>}
       </div>
       <button
         disabled={status === "LOADING"}
-        className="w-full gold-gradient text-black py-4 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl shadow-amber-500/10"
+        className="w-full gold-gradient text-black py-4 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl shadow-amber-500/10 disabled:opacity-70"
       >
         {status === "LOADING" ? t("contact.sending") : t("contact.send")}
       </button>

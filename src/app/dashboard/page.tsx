@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Clock, MapPin, Package, Calendar, ArrowRight,
+  Clock, MapPin, Package, Calendar, ArrowRight, User,
   AlertCircle, CheckCircle2, ArrowLeft, Bell, LogOut, Home, FileText, Shield
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
@@ -56,6 +56,13 @@ export default function UserDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/dashboard/profile")}
+              className="glass px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-white/10 transition-all border border-white/5"
+            >
+              <User className="w-4 h-4" />
+              {t("profile.title")}
+            </button>
             <button
               onClick={() => router.push("/")}
               className="glass px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-white/10 transition-all border border-white/5"

@@ -37,6 +37,10 @@ export async function GET(
         },
         reports: true,
         ratings: true,
+        requestTerms: {
+          where: { expertId: user.id },
+          orderBy: { createdAt: "asc" as const },
+        },
       },
     });
 

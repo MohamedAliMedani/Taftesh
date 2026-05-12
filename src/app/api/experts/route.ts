@@ -31,6 +31,10 @@ export async function GET(request: Request) {
         bio: true,
         experienceYears: true,
         serviceRate: true,
+        expertTerms: {
+          select: { termKey: true, experienceYears: true, price: true },
+          orderBy: { createdAt: "asc" as const },
+        },
         ratingsReceived: {
           select: { score: true },
         },
@@ -59,6 +63,7 @@ export async function GET(request: Request) {
         bio: p.bio,
         experienceYears: p.experienceYears,
         serviceRate: p.serviceRate,
+        terms: p.expertTerms,
         avgRating,
         totalRatings: ratings.length,
         completedRequests: p.assignedRequests.length,

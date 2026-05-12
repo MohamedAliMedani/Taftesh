@@ -30,6 +30,12 @@ export async function GET(
         reports: true,
         ratings: true,
         transactions: true,
+        requestTerms: {
+          include: {
+            expert: { select: { id: true, name: true, specialty: true } },
+          },
+          orderBy: { createdAt: "asc" as const },
+        },
         continuations: {
           orderBy: { createdAt: "desc" as const },
         },

@@ -80,6 +80,8 @@ model User {
   ratingsReceived    Rating[]                @relation("RatedRatings")
   notifications      Notification[]
   continuationRequests ContinuationRequest[]
+  expertTerms          ExpertTerm[]          @relation("ExpertTerms")
+  requestTermsAsExpert RequestTerm[]         @relation("RequestTermExpert")
 }
 
 model Property {
@@ -116,6 +118,7 @@ model InspectionRequest {
   transactions  Transaction[]
   ratings       Rating[]
   continuations ContinuationRequest[]
+  requestTerms  RequestTerm[]
 }
 
 model Transaction {
@@ -190,6 +193,44 @@ model ContinuationRequest {
 
   request InspectionRequest @relation(fields: [requestId], references: [id])
   lawyer  User?             @relation(fields: [lawyerId], references: [id])
+}
+
+model ExpertTerm {
+  id              String   @id @default(cuid())
+  expertId        String
+  termKey         String
+  experienceYears Int
+  price           Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  expert User @relation("ExpertTerms", fields: [expertId], references: [id], onDelete: Cascade)
+
+  @@unique([expertId, termKey])
+}
+
+model RequestTerm {
+  id          String    @id @default(cuid())
+  requestId   String
+  termKey     String
+  expertId    String
+  price       Float
+  status      String    @default("PENDING") // PENDING, ARRIVED, IN_PROGRESS, COMPLETED
+  arrivedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  request InspectionRequest @relation(fields: [requestId], references: [id])
+  expert  User              @relation("RequestTermExpert", fields: [expertId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  phone     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
 }
 
 model ContactMessage {

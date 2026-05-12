@@ -3,24 +3,25 @@ import { requireAuth, handleApiError } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import crypto from "crypto";
-import { PACKAGES, SITE_CONFIG, calculateTotalPrice } from "@/lib/config";
+import { PACKAGES, SITE_CONFIG } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
 import { getServerT } from "@/lib/i18n/server";
 
 const paymentSchema = z.object({
-  packageName: z.enum(["TECHNICAL", "LEGAL", "FULL"], {
-    error: "يجب اختيار باقة صالحة",
-  }),
-  propertyAddress: z
-    .string({ error: "عنوان العقار مطلوب" })
-    .min(5, "عنوان العقار يجب أن يكون تفصيلياً"),
+  packageName: z.enum(["TECHNICAL", "LEGAL", "FULL"]),
+  propertyAddress: z.string().min(5),
   propertyArea: z.string().optional(),
   propertyType: z.string().optional(),
   scheduledDate: z.string().optional(),
-  paymentMethod: z.enum(["ONLINE", "CASH"], {
-    error: "يجب اختيار طريقة دفع صالحة",
-  }),
+  paymentMethod: z.enum(["ONLINE", "CASH"]),
   notes: z.string().optional(),
+  cartItems: z.array(z.object({
+    expertId: z.string(),
+    expertName: z.string(),
+    termKey: z.string(),
+    price: z.number().min(0),
+  })).optional(),
+  // Legacy fields (backward compat)
   expertId: z.string().optional(),
   engineerId: z.string().optional(),
   lawyerId: z.string().optional(),
@@ -48,59 +49,22 @@ export async function POST(req: Request) {
       scheduledDate,
       paymentMethod,
       notes,
-      expertId,
-      engineerId,
-      lawyerId,
+      cartItems,
     } = validated.data;
 
     const selectedPkg = PACKAGES[packageName as PackageName];
 
-    // Validate expert(s) if selected and collect rates
-    let validExpertId: string | undefined;
-    let totalBaseRate = 0;
-    const adminNotesParts: string[] = [];
+    // Calculate price from cart items (prices already include platform fee)
+    const packagePrice = cartItems && cartItems.length > 0
+      ? cartItems.reduce((sum, item) => sum + item.price, 0)
+      : 0;
 
-    if (expertId) {
-      const expert = await prisma.user.findFirst({
-        where: { id: expertId, role: "EXPERT", verified: true, active: true },
-        select: { id: true, name: true, serviceRate: true },
-      });
-      if (expert) {
-        validExpertId = expert.id;
-        totalBaseRate += expert.serviceRate ?? 0;
-        adminNotesParts.push(`العميل اختار الخبير: ${expert.name}`);
-      }
-    }
+    // Determine primary provider (first expert in cart)
+    const validExpertId = cartItems && cartItems.length > 0 ? cartItems[0].expertId : undefined;
 
-    // For FULL package: validate engineer and lawyer separately
-    if (engineerId) {
-      const eng = await prisma.user.findFirst({
-        where: { id: engineerId, role: "EXPERT", specialty: "ENGINEER", verified: true, active: true },
-        select: { id: true, name: true, serviceRate: true },
-      });
-      if (eng) {
-        if (!validExpertId) validExpertId = eng.id;
-        totalBaseRate += eng.serviceRate ?? 0;
-        adminNotesParts.push(`المهندس المختار: ${eng.name} (${eng.id})`);
-      }
-    }
-
-    if (lawyerId) {
-      const law = await prisma.user.findFirst({
-        where: { id: lawyerId, role: "EXPERT", specialty: "LAWYER", verified: true, active: true },
-        select: { id: true, name: true, serviceRate: true },
-      });
-      if (law) {
-        if (!validExpertId) validExpertId = law.id;
-        totalBaseRate += law.serviceRate ?? 0;
-        adminNotesParts.push(`المحامي المختار: ${law.name} (${law.id})`);
-      }
-    }
-
-    const autoAdminNotes = adminNotesParts.length > 0 ? adminNotesParts.join(" | ") : undefined;
-
-    // Calculate price from expert rate + platform fee
-    const packagePrice = totalBaseRate > 0 ? calculateTotalPrice(totalBaseRate) : 0;
+    // Build admin notes from cart
+    const expertNames = [...new Set(cartItems?.map(i => i.expertName) || [])];
+    const autoAdminNotes = expertNames.length > 0 ? `الخبراء: ${expertNames.join(", ")}` : undefined;
 
     // 1. Create Property
     const property = await prisma.property.create({
@@ -129,6 +93,18 @@ export async function POST(req: Request) {
         },
       });
 
+      // Create RequestTerms from cart
+      if (cartItems && cartItems.length > 0) {
+        await prisma.requestTerm.createMany({
+          data: cartItems.map((item) => ({
+            requestId: inspectionRequest.id,
+            termKey: item.termKey,
+            expertId: item.expertId,
+            price: item.price,
+          })),
+        });
+      }
+
       return NextResponse.json({
         message: t("api.requestCreatedCash"),
         requestId: inspectionRequest.id,
@@ -152,6 +128,18 @@ export async function POST(req: Request) {
         adminNotes: autoAdminNotes,
       },
     });
+
+    // 3b. Create RequestTerms from cart
+    if (cartItems && cartItems.length > 0) {
+      await prisma.requestTerm.createMany({
+        data: cartItems.map((item) => ({
+          requestId: inspectionRequest.id,
+          termKey: item.termKey,
+          expertId: item.expertId,
+          price: item.price,
+        })),
+      });
+    }
 
     // 4. Create Transaction
     const transaction = await prisma.transaction.create({

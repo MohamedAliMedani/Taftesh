@@ -125,6 +125,12 @@ export default function LoginPage() {
             </motion.div>
           )}
 
+          <div className="text-left">
+            <a href="/forgot-password" className="text-xs text-amber-400/70 hover:text-amber-400 transition-colors">
+              {t("login.forgotPassword")}
+            </a>
+          </div>
+
           <button
             type="submit"
             disabled={loading}

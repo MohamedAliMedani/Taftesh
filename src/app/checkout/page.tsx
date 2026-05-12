@@ -5,15 +5,22 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Script from "next/script";
 import {
-  MapPin, CreditCard, AlertCircle, CalendarClock,
+  MapPin, CreditCard, AlertCircle, CalendarClock, ArrowRight,
   Clock, Banknote, CheckCircle2, Building, StickyNote, Shield
 } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import { motion } from "framer-motion";
-import { PACKAGES, calculateTotalPrice } from "@/lib/config";
+import { PACKAGES, getTermName } from "@/lib/config";
 import type { PackageName } from "@/lib/config";
 import Dropdown from "@/components/ui/Dropdown";
-import { useT } from "@/lib/i18n";
+import { useT, useLanguage } from "@/lib/i18n";
+
+interface CartItem {
+  expertId: string;
+  expertName: string;
+  termKey: string;
+  price: number;
+}
 
 export default function CheckoutPage() {
   const t = useT();
@@ -26,18 +33,14 @@ export default function CheckoutPage() {
 
 function CheckoutContent() {
   const t = useT();
+  const { lang } = useLanguage();
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pkgQuery = (searchParams.get("package") as PackageName) || "FULL";
-  const expertId = searchParams.get("expertId");
-  const engineerId = searchParams.get("engineerId");
-  const lawyerId = searchParams.get("lawyerId");
 
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [propertyAddress, setPropertyAddress] = useState("");
-  const [selectedExpert, setSelectedExpert] = useState<{name: string; profileImage: string | null; specialty: string; serviceRate: number | null} | null>(null);
-  const [selectedEngineer, setSelectedEngineer] = useState<{name: string; profileImage: string | null; serviceRate: number | null} | null>(null);
-  const [selectedLawyer, setSelectedLawyer] = useState<{name: string; profileImage: string | null; serviceRate: number | null} | null>(null);
   const [propertyArea, setPropertyArea] = useState("");
   const [propertyType, setPropertyType] = useState("");
   const [today] = useState(() => new Date().toISOString().split("T")[0]);
@@ -52,12 +55,7 @@ function CheckoutContent() {
 
   const selectedPkg = PACKAGES[pkgQuery] || PACKAGES.FULL;
 
-  // Calculate total price dynamically from expert rates
-  const expertRate = selectedExpert?.serviceRate ?? 0;
-  const engineerRate = selectedEngineer?.serviceRate ?? 0;
-  const lawyerRate = selectedLawyer?.serviceRate ?? 0;
-  const baseRate = pkgQuery === "FULL" ? engineerRate + lawyerRate : expertRate;
-  const totalPrice = baseRate > 0 ? calculateTotalPrice(baseRate) : 0;
+  const totalPrice = cartItems.reduce((sum, i) => sum + i.price, 0);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -66,27 +64,11 @@ function CheckoutContent() {
   }, [status, router, pkgQuery]);
 
   useEffect(() => {
-    if (expertId || engineerId || lawyerId) {
-      fetch(`/api/experts?package=${pkgQuery}`)
-        .then((r) => r.json())
-        .then((data) => {
-          const all = data.data || [];
-          if (expertId) {
-            const expert = all.find((e: any) => e.id === expertId);
-            if (expert) setSelectedExpert({ name: expert.name, profileImage: expert.profileImage, specialty: expert.specialty, serviceRate: expert.serviceRate });
-          }
-          if (engineerId) {
-            const eng = all.find((e: any) => e.id === engineerId);
-            if (eng) setSelectedEngineer({ name: eng.name, profileImage: eng.profileImage, serviceRate: eng.serviceRate });
-          }
-          if (lawyerId) {
-            const law = all.find((e: any) => e.id === lawyerId);
-            if (law) setSelectedLawyer({ name: law.name, profileImage: law.profileImage, serviceRate: law.serviceRate });
-          }
-        })
-        .catch(() => {});
+    const saved = sessionStorage.getItem("taftesh_cart");
+    if (saved) {
+      try { setCartItems(JSON.parse(saved)); } catch {}
     }
-  }, [expertId, engineerId, lawyerId, pkgQuery]);
+  }, []);
 
   if (status === "loading" || status === "unauthenticated") {
     return <div className="min-h-screen flex items-center justify-center text-amber-500">{t("checkout.verifying")}</div>;
@@ -96,13 +78,15 @@ function CheckoutContent() {
   const touchField = (f: string) => setTouched((p) => ({ ...p, [f]: true }));
   const fieldErrors = {
     address: !propertyAddress.trim() ? t("validation.addressRequired") : propertyAddress.trim().length < 10 ? t("validation.addressMin") : "",
+    area: !propertyArea.trim() ? t("validation.propertyAreaRequired") : "",
+    propertyType: !propertyType ? t("validation.propertyTypeRequired") : "",
     date: !selectedDate ? t("validation.dateRequired") : "",
     time: !selectedTime ? t("validation.timeRequired") : "",
   };
 
   const handlePayment = async () => {
-    setTouched({ address: true, date: true, time: true });
-    if (fieldErrors.address || fieldErrors.date || fieldErrors.time) {
+    setTouched({ address: true, area: true, propertyType: true, date: true, time: true });
+    if (Object.values(fieldErrors).some(e => e)) {
       setError(t("checkout.fixErrors"));
       return;
     }
@@ -124,9 +108,7 @@ function CheckoutContent() {
           scheduledDate: scheduledDateTime.toISOString(),
           paymentMethod,
           notes: notes || undefined,
-          expertId: expertId || undefined,
-          engineerId: engineerId || undefined,
-          lawyerId: lawyerId || undefined,
+          cartItems: cartItems,
         }),
       });
 
@@ -191,6 +173,13 @@ function CheckoutContent() {
     }
   };
 
+  // Group cart items by expert name for display
+  const groupedCart = cartItems.reduce<Record<string, CartItem[]>>((acc, item) => {
+    if (!acc[item.expertName]) acc[item.expertName] = [];
+    acc[item.expertName].push(item);
+    return acc;
+  }, {});
+
   if (cashSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-[#0a0a0b]">
@@ -240,57 +229,35 @@ function CheckoutContent() {
           <div className="space-y-4 mb-6">
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">{t("checkout.package")}</span>
-              <span className="font-bold">{selectedPkg.nameAr}</span>
+              <span className="font-bold">{t(`pkg.${pkgQuery.toLowerCase()}.name`)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">{t("checkout.description")}</span>
-              <span className="text-end max-w-[200px]">{selectedPkg.desc}</span>
+              <span className="text-end max-w-[200px]">{t(`pkg.${pkgQuery.toLowerCase()}.desc`)}</span>
             </div>
-            {selectedExpert && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">{t("checkout.expert")}</span>
-                <div className="flex items-center gap-2">
-                  {selectedExpert.profileImage ? (
-                    <img src={selectedExpert.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-6 h-6 gold-gradient rounded-full flex items-center justify-center text-black text-[10px] font-bold">
-                      {selectedExpert.name?.charAt(0)}
-                    </div>
-                  )}
-                  <span className="font-bold">{selectedExpert.name}</span>
+
+            {/* Cart breakdown */}
+            {cartItems.length > 0 && (
+              <>
+                <div className="border-t border-white/10 pt-4">
+                  <p className="text-sm font-bold text-amber-400 mb-3">{t("checkout.cartBreakdown")}</p>
+                  <div className="space-y-4">
+                    {Object.entries(groupedCart).map(([expertName, items]) => (
+                      <div key={expertName} className="space-y-2">
+                        <p className="text-xs font-bold text-white/80">{expertName}</p>
+                        {items.map((item, idx) => (
+                          <div key={`${item.termKey}-${idx}`} className="flex justify-between items-center text-sm pr-3">
+                            <span className="text-muted-foreground">{getTermName(item.termKey, lang)}</span>
+                            <span className="font-bold">{item.price.toLocaleString()} {t("checkout.currency")}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
-            {selectedEngineer && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">{t("checkout.engineer")}</span>
-                <div className="flex items-center gap-2">
-                  {selectedEngineer.profileImage ? (
-                    <img src={selectedEngineer.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-[10px] font-bold">
-                      {selectedEngineer.name?.charAt(0)}
-                    </div>
-                  )}
-                  <span className="font-bold">{selectedEngineer.name}</span>
-                </div>
-              </div>
-            )}
-            {selectedLawyer && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">{t("checkout.lawyer")}</span>
-                <div className="flex items-center gap-2">
-                  {selectedLawyer.profileImage ? (
-                    <img src={selectedLawyer.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 text-[10px] font-bold">
-                      {selectedLawyer.name?.charAt(0)}
-                    </div>
-                  )}
-                  <span className="font-bold">{selectedLawyer.name}</span>
-                </div>
-              </div>
-            )}
+
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">{t("checkout.paymentMethod")}</span>
               <span className="font-bold">{paymentMethod === "CASH" ? t("checkout.cash") : t("checkout.online")}</span>
@@ -319,6 +286,13 @@ function CheckoutContent() {
         >
           {!paymentReady ? (
             <>
+              <button
+                onClick={() => router.push(`/experts?package=${pkgQuery}`)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-amber-400 transition-colors"
+              >
+                <ArrowRight className="w-4 h-4" />
+                {t("nav.backToPackages")}
+              </button>
               <h1 className="text-2xl md:text-3xl font-bold outfit">{t("checkout.title")}</h1>
               <p className="text-muted-foreground">{t("checkout.subtitle")}</p>
 
@@ -341,21 +315,23 @@ function CheckoutContent() {
 
                 {/* Area & Type */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-white">{t("checkout.area")}</label>
-                    <div className="glass flex items-center px-4 py-3 rounded-2xl border border-white/5">
-                      <Building className="w-5 h-5 text-amber-500 ml-3" />
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-white">{t("checkout.area")} {t("common.required")}</label>
+                    <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.area && fieldErrors.area ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
+                      <Building className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
                       <input
                         type="text"
                         value={propertyArea}
                         onChange={(e) => setPropertyArea(e.target.value)}
+                        onBlur={() => touchField("area")}
                         placeholder={t("checkout.areaPlaceholder")}
                         className="bg-transparent border-none outline-none text-sm w-full"
                       />
                     </div>
+                    {touched.area && fieldErrors.area && <p className="text-[11px] text-red-400 mr-2">{fieldErrors.area}</p>}
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-white">{t("checkout.propertyType")}</label>
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-white">{t("checkout.propertyType")} {t("common.required")}</label>
                     <Dropdown
                       value={propertyType}
                       onChange={setPropertyType}
@@ -370,6 +346,7 @@ function CheckoutContent() {
                         { value: t("checkout.other"), label: t("checkout.other") },
                       ]}
                     />
+                    {touched.propertyType && fieldErrors.propertyType && <p className="text-[11px] text-red-400 mr-2">{fieldErrors.propertyType}</p>}
                   </div>
                 </div>
 
@@ -378,7 +355,7 @@ function CheckoutContent() {
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-white">{t("checkout.inspectionDate")} {t("common.required")}</label>
                     <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.date && fieldErrors.date ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
-                      <CalendarClock className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
+                      <CalendarClock className="w-5 h-5 text-white ml-3 flex-shrink-0" />
                       <input
                         type="date"
                         value={selectedDate}
@@ -393,7 +370,7 @@ function CheckoutContent() {
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-white">{t("checkout.inspectionTime")} {t("common.required")}</label>
                     <div className={`glass flex items-center px-4 py-3 rounded-2xl border transition-all ${touched.time && fieldErrors.time ? "ring-2 ring-red-500/50 border-red-500/20" : "border-white/5"}`}>
-                      <Clock className="w-5 h-5 text-amber-500 ml-3 flex-shrink-0" />
+                      <Clock className="w-5 h-5 text-white ml-3 flex-shrink-0" />
                       <input
                         type="time"
                         value={selectedTime}
@@ -437,7 +414,7 @@ function CheckoutContent() {
                       <div className="text-sm font-bold">{t("checkout.onlinePayment")}</div>
                       <div className="text-[10px] text-muted-foreground">{t("checkout.onlinePaymentDesc")}</div>
                     </button>
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => setPaymentMethod("CASH")}
                       className={`glass p-4 rounded-2xl border text-center transition-all ${
@@ -449,7 +426,7 @@ function CheckoutContent() {
                       <Banknote className={`w-6 h-6 mx-auto mb-2 ${paymentMethod === "CASH" ? "text-amber-400" : "text-muted-foreground"}`} />
                       <div className="text-sm font-bold">{t("checkout.cashPayment")}</div>
                       <div className="text-[10px] text-muted-foreground">{t("checkout.cashPaymentDesc")}</div>
-                    </button>
+                    </button> */}
                   </div>
                 </div>
 

@@ -20,6 +20,11 @@ const baseSchema = z.object({
   profileImage: z.string().optional(),
   syndicateCardImage: z.string().optional(),
   serviceRate: z.number().min(0).optional(),
+  terms: z.array(z.object({
+    termKey: z.string(),
+    experienceYears: z.number().int().min(0).max(60),
+    price: z.number().min(1),
+  })).optional(),
 });
 
 export async function POST(req: Request) {
@@ -38,7 +43,7 @@ export async function POST(req: Request) {
     const {
       name, phone, password, confirmPassword, email,
       userType, specialty, bio, experienceYears, nationalIdImage,
-      profileImage, syndicateCardImage, serviceRate,
+      profileImage, syndicateCardImage, serviceRate, terms,
     } = validatedData.data;
 
     // Confirm password match
@@ -57,8 +62,11 @@ export async function POST(req: Request) {
       if (!syndicateCardImage) {
         return NextResponse.json({ error: t("api.uploadSyndicateCard") }, { status: 400 });
       }
-      if (!serviceRate || serviceRate <= 0) {
-        return NextResponse.json({ error: t("api.setServiceRate") }, { status: 400 });
+      if (!terms || terms.length === 0) {
+        return NextResponse.json({ error: t("validation.termsRequired") }, { status: 400 });
+      }
+      if (terms.some(t2 => t2.price <= 0)) {
+        return NextResponse.json({ error: t("validation.termsPriceRequired") }, { status: 400 });
       }
     }
 
@@ -78,6 +86,10 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Compute backward-compat fields from terms
+    const computedServiceRate = terms && terms.length > 0 ? Math.min(...terms.map(t2 => t2.price)) : serviceRate;
+    const computedExperienceYears = terms && terms.length > 0 ? Math.max(...terms.map(t2 => t2.experienceYears)) : experienceYears;
+
     const user = await prisma.user.create({
       data: {
         name,
@@ -87,14 +99,26 @@ export async function POST(req: Request) {
         role: userType,
         specialty: userType === "EXPERT" ? specialty : null,
         bio: userType === "EXPERT" ? bio : null,
-        experienceYears: userType === "EXPERT" ? experienceYears : null,
+        experienceYears: userType === "EXPERT" ? (computedExperienceYears ?? null) : null,
         nationalIdImage: userType === "EXPERT" ? nationalIdImage : null,
         profileImage: userType === "EXPERT" ? profileImage : null,
         syndicateCardImage: userType === "EXPERT" ? syndicateCardImage : null,
-        serviceRate: userType === "EXPERT" ? serviceRate : null,
+        serviceRate: userType === "EXPERT" ? (computedServiceRate ?? null) : null,
         verified: false,
       },
     });
+
+    // Create expert terms
+    if (userType === "EXPERT" && terms && terms.length > 0) {
+      await prisma.expertTerm.createMany({
+        data: terms.map(t2 => ({
+          expertId: user.id,
+          termKey: t2.termKey,
+          experienceYears: t2.experienceYears,
+          price: t2.price,
+        })),
+      });
+    }
 
     // If email provided, create verification token
     if (email) {
